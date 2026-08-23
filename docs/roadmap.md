@@ -20,6 +20,10 @@
       con el disclaimer reforzado — `M-03`.
 - [ ] Persistencia de cada conversación (ficha + informe) en Supabase — `M-04`.
 - [ ] Aviso automático por email al asesor al completarse una conversación — `M-05`.
+- [ ] Consentimiento de tratamiento de datos antes de crear la conversación — `M-06`. Bloqueante:
+      no se expone la landing sin esto.
+- [ ] Límite de uso por IP (hash) en `app/api/chat/` (ver `architecture.md` → "Protección contra
+      abuso"). Bloqueante: la URL es pública y cada mensaje cuesta dinero real.
 
 **Objetivo de validación:** confirmar que un visitante real completa la entrevista sin abandonarla
 a mitad camino, que el diagnóstico automático que recibe es coherente y útil incluso sin filtro

@@ -88,6 +88,13 @@ de partida para la siguiente conversación con esa persona — no como sustituto
   el diagnóstico, entonces el sistema envía un email automático al asesor con el resumen del caso
   (o un enlace para consultarlo), sin que el asesor tenga que estar revisando activamente.
 
+- **[M-06] Consentimiento de tratamiento de datos antes de empezar** — Dado un visitante que pulsa
+  el punto de entrada del chat, cuando se le presenta la solicitud de consentimiento de tratamiento
+  de datos, entonces la conversación no se crea ni se persiste ningún dato hasta que acepta
+  explícitamente; al aceptar, se registra la fecha y hora del consentimiento.
+  *Negativo:* dado un visitante que no acepta, cuando cierra o abandona esa pantalla, entonces no
+  queda ninguna fila de conversación ni dato personal asociado.
+
 ### SHOULD
 - **[S-01] Panel de consulta para el asesor** — Dado que el asesor quiere revisar casos pasados,
   cuando accede al panel, entonces ve el listado de conversaciones completadas con su ficha y
@@ -118,7 +125,9 @@ de partida para la siguiente conversación con esa persona — no como sustituto
 
 **Flujo del visitante:**
 Recibe un email del asesor con la URL de la landing. Entra, ve la presentación de la asesoría y del
-agente, y pulsa para iniciar el chat. El agente se presenta, da el disclaimer regulatorio y conduce
+agente, y pulsa para iniciar el chat. Antes de que se cree ninguna conversación, acepta el
+consentimiento de tratamiento de datos (`M-06`) — si no acepta, no queda ningún rastro. El agente se
+presenta, da el disclaimer regulatorio y conduce
 la entrevista de 8 bloques, una pregunta cada vez. Al terminar, repasa con el visitante un resumen
 de confirmación de los datos. Con la confirmación, el sistema genera la ficha internamente y, sin
 pasos adicionales por parte del visitante, ejecuta el motor de análisis y le muestra en el chat su
@@ -143,6 +152,13 @@ del sistema (llamada, reunión, propuesta formal).
   actualizarse para reflejarlo antes de construir sobre ellos.
 - **Confidencialidad de datos financieros:** los datos recogidos son sensibles (ingresos, deudas,
   patrimonio). Cifrado en tránsito y en reposo, acceso a la base de datos restringido al asesor.
+- **Protección de datos (RGPD):** el tratamiento de datos personales requiere consentimiento
+  explícito antes de que exista cualquier registro (`M-06`); minimización de datos (no se sabe quién
+  es el visitante hasta que da nombre y email dentro del chat); las conversaciones tienen fecha de
+  expiración. Pendiente de revisión legal antes de producción.
+- **Protección contra abuso:** el chat es de acceso público y cada mensaje tiene coste real (API de
+  Claude). Debe existir un límite de uso por origen (ver `docs/architecture.md` → "Protección contra
+  abuso") antes de exponer la landing públicamente.
 - **Responsive:** el enlace llega por email y es razonable esperar que una parte relevante de
   visitantes lo abra desde el móvil; la landing y el chat deben ser usables en pantalla pequeña.
 - **Idioma:** español, único idioma de esta versión.

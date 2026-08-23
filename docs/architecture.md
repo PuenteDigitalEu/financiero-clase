@@ -40,12 +40,15 @@
 ```mermaid
 graph TD
   Visitor[Visitante] -->|abre URL del email| Landing[Landing - Next.js]
-  Landing -->|inicia chat| ChatAPI[Route handler /api/chat]
-  ChatAPI --> Claude[Anthropic Claude API]
-  ChatAPI -->|guarda ficha + diagnostico| DB[(Supabase Postgres)]
+  Landing -->|acepta consentimiento, inicia chat| ChatAPI[Route handler /api/chat]
+  ChatAPI -->|valida limites_uso hash IP| RateLimit{Limite de uso}
+  RateLimit -->|dentro del limite| Claude[Anthropic Claude API]
+  RateLimit -->|excedido| Rechazo[Rechaza turno]
+  ChatAPI -->|token de sesion valida escritura| DB[(Supabase Postgres)]
+  ChatAPI -->|guarda cliente, ficha, informe, plan| DB
   ChatAPI -->|dispara aviso| EmailFn[Supabase Edge Function + SMTP]
   EmailFn -->|email de aviso| Advisor[Asesor]
-  Advisor -->|login magic link| AuthSB[Supabase Auth]
+  Advisor -->|login magic link + fila en asesores| AuthSB[Supabase Auth]
   Advisor -->|consulta casos| Panel[Panel asesor - Next.js]
   Panel --> AuthSB
   Panel --> DB
@@ -63,7 +66,8 @@ src/
 │   ├── (landing)/          → Página pública de la landing
 │   ├── chat/                → UI del chat embebido
 │   ├── api/
-│   │   └── chat/             → Route handler: orquesta turno de entrevista y cierre con diagnóstico
+│   │   └── chat/             → Route handler: consentimiento, límite de uso, turno de entrevista,
+│   │                            cierre con diagnóstico y plan
 │   └── panel/                → Panel del asesor (S-01), protegido por Supabase Auth
 ├── components/
 │   ├── landing/               → Hero, presentación de la asesoría y del agente
@@ -89,13 +93,30 @@ mejoras/          → ideas futuras no implementadas
 
 Dos superficies con requisitos opuestos:
 
-- **Chat del visitante:** sin autenticación, tal como fija el PRD (`WON'T`: sin cuentas de
-  usuario). El acceso se controla solo porque la URL no se publica ni se enlaza desde ningún sitio
-  indexable — es "seguridad por no-difusión", no autenticación real. Si en el futuro esto se
-  considera insuficiente (la URL se filtra, se comparte de más), habría que revisar esta decisión.
-- **Panel del asesor (`S-01`):** protegido con Supabase Auth, magic link al email del asesor. Único
+- **Chat del visitante:** sin cuenta de usuario, tal como fija el PRD (`WON'T`). La URL de entrada
+  es genérica y no se publica ni se enlaza desde ningún sitio indexable — "seguridad por
+  no-difusión" a nivel de landing. Pero cada conversación individual sí lleva su propio secreto:
+  al aceptar el consentimiento de tratamiento de datos, el servidor crea la fila en
+  `conversaciones` con un `token` (uuid) único, que viaja en la URL de esa sesión concreta y es lo
+  único que autoriza a `app/api/chat/` a escribir en ella. Esto no es una URL personalizada por
+  destinatario (eso sigue fuera de alcance, ver PRD) — es un identificador de sesión que impide que
+  un visitante pueda leer o alterar la conversación de otro adivinando o enumerando IDs.
+- **Panel del asesor (`S-01`):** protegido con Supabase Auth, magic link al email del asesor.
+  Autenticarse no basta por sí solo: las políticas RLS exigen además una fila en `asesores` (ver
+  `docs/data-model.md`) — estar en esa tabla es el permiso, no la sesión de Auth en sí misma. Único
   usuario admitido en esta versión (no hay roles ni multi-asesor, ver PRD). Las rutas bajo
   `app/panel/` comprueban sesión en el servidor antes de renderizar.
+
+---
+
+## Protección contra abuso
+
+El chat es público y cada mensaje cuesta dinero real en la API de Claude — sin límite, recargar la
+página en bucle vacía el saldo. `app/api/chat/` comprueba un límite de uso antes de crear una
+conversación nueva y antes de procesar cada mensaje, contra la tabla `limites_uso`. Se guarda un
+**hash** de la IP de origen, nunca la IP en claro, para poder contar sin almacenar un dato personal
+identificable. Umbrales concretos (mensajes por IP y ventana de tiempo) se deciden al implementar,
+no están fijados aquí.
 
 ---
 
@@ -197,6 +218,28 @@ documento.
 **Consecuencias:** hasta que esos dos documentos no estén actualizados, no hay system prompt válido
 que darle a Claude para `app/api/chat/`. Es la primera tarea de implementación, antes de cualquier
 código de UI.
+
+### 2026-08-23 — Consentimiento RGPD como paso obligatorio antes de crear la conversación
+
+**Contexto:** el chat recoge datos financieros de personas identificadas (nombre, email, ingresos,
+deudas, patrimonio) a través de una URL pública. El PRD y `docs/data-model.md` no contemplaban el
+consentimiento de tratamiento de datos como paso explícito — se detectó al comparar con
+`polmarza/Clase-Agente-Financiero`, cuyo esquema hace que la fila de `conversaciones` no pueda
+existir sin un `consentimiento_en` no nulo.
+
+**Opciones consideradas:** (a) tratar el disclaimer regulatorio de apertura (ya existente en
+`plantilla-entrevista.md`) como consentimiento implícito; (b) exigir una aceptación explícita
+(checkbox o respuesta afirmativa) antes de que el servidor cree la fila de `conversaciones`, con
+timestamp obligatorio.
+
+**Decisión:** (b). El disclaimer regulatorio informa de que la orientación no es asesoramiento
+regulado; el consentimiento es un acto distinto — autorizar el tratamiento de los datos que va a
+dar. Se piden ambos, y la conversación no se persiste hasta tener el segundo.
+
+**Consecuencias:** `docs/data-model.md` → `conversaciones.consentimiento_en` es `not null`. El
+flujo de `docs/user-flows.md` (`FLOW-01`) necesita un paso explícito de consentimiento antes del
+primer bloque de la entrevista. Pendiente de revisión legal antes de producción — esta decisión fija
+el mecanismo técnico, no sustituye una revisión de cumplimiento RGPD real.
 
 ---
 

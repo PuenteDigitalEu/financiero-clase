@@ -30,19 +30,25 @@ condicionados / el modo de estabilización que corresponda), con el disclaimer r
 1. El visitante abre la landing desde la URL del email.
 2. Ve la presentación de la asesoría y del agente, y pulsa el punto de entrada para iniciar el
    chat.
-3. El agente se presenta y da el disclaimer regulatorio de apertura (obligatorio, no se salta).
-4. El agente conduce la entrevista en el orden fijo de `plantilla-entrevista.md` — ingresos,
+3. Acepta el consentimiento de tratamiento de datos (`M-06`). Hasta este punto no existe ninguna
+   fila de conversación ni se ha guardado ningún dato personal. Solo al aceptar, el servidor crea
+   la conversación con su `token` de sesión y el timestamp de consentimiento.
+4. El agente se presenta y da el disclaimer regulatorio de apertura (obligatorio, no se salta —
+   distinto del consentimiento del paso anterior: uno autoriza el tratamiento de datos, el otro
+   aclara que no es asesoramiento regulado).
+5. El agente conduce la entrevista en el orden fijo de `plantilla-entrevista.md` — ingresos,
    gastos, deudas, ahorro/inversión, colchón, objetivo, horizonte/riesgo, edad/situación vital —
    una pregunta cada vez, con repregunta única cuando la respuesta es ambigua y opción de saltar
    datos sensibles.
-5. Al terminar los 8 bloques, el agente repasa un resumen de confirmación de los datos dados (sin
+6. Al terminar los 8 bloques, el agente repasa un resumen de confirmación de los datos dados (sin
    cálculos ni veredictos).
-6. El visitante confirma o corrige.
-7. Con la confirmación, el sistema genera la ficha, la persiste, y ejecuta `lib/motor/` sobre ella.
-8. El agente muestra en el chat, en una card diferenciada (`DiagnosisCard`), el resultado según el
+7. El visitante confirma o corrige.
+8. Con la confirmación, el sistema genera la ficha, la persiste, y ejecuta `lib/motor/` sobre ella.
+9. El agente muestra en el chat, en una card diferenciada (`DiagnosisCard`), el resultado según el
    modo que le corresponda (completo / condicionado / suspendido — `instrucciones-motor.md` §4),
-   junto al disclaimer reforzado de que un asesor humano lo revisará.
-9. El chat cierra indicando que el asesor revisará el caso y se pondrá en contacto.
+   junto al disclaimer reforzado de que un asesor humano lo revisará. El plan mostrado se guarda
+   íntegro (`planes`), con el disclaimer exacto que se le presentó.
+10. El chat cierra indicando que el asesor revisará el caso y se pondrá en contacto.
 
 ### Diagrama
 
@@ -50,7 +56,10 @@ condicionados / el modo de estabilización que corresponda), con el disclaimer r
 flowchart TD
   A[Abre URL del email] --> B[Landing: presentacion asesoria + agente]
   B --> C[Inicia chat]
-  C --> D[Disclaimer regulatorio de apertura]
+  C --> C2{Acepta consentimiento de datos?}
+  C2 -->|No| C3[No se crea conversacion, sin rastro]
+  C2 -->|Si| C4[Se crea conversacion con token de sesion]
+  C4 --> D[Disclaimer regulatorio de apertura]
   D --> E[Entrevista: bloques 1 a 8, una pregunta cada vez]
   E --> F{Dato sensible rechazado?}
   F -->|Si| G[Marca pendiente, avisa imprecision, continua]
@@ -71,6 +80,11 @@ flowchart TD
 
 ### Casos de error
 
+- **No acepta el consentimiento:** no se crea conversación, no se persiste ningún dato. El
+  visitante puede volver a intentarlo desde la landing en cualquier momento.
+- **Límite de uso excedido (`docs/architecture.md` → "Protección contra abuso"):** el servidor
+  rechaza crear una conversación nueva o procesar un mensaje; se informa al visitante con un
+  mensaje genérico, sin detalle técnico del límite.
 - **Abandono a mitad de la entrevista:** la conversación queda en estado `abandonada` (o
   `en_curso` hasta un umbral de inactividad); no se genera ficha ni informe, no se dispara el aviso
   al asesor (`FLOW-02`).

@@ -77,6 +77,10 @@ Reglas que se derivan de eso:
 - E2E del camino feliz completo de `FLOW-01`: desde la landing hasta ver el diagnóstico en el chat.
 - E2E de al menos un caso con modo `condicionado` o `suspendido`, para comprobar que el chat nunca
   muestra una propuesta ejecutable cuando no la hay.
+- Consentimiento (`M-06`): que no se crea fila de `conversaciones` sin aceptar, y que aceptar
+  registra el timestamp correcto.
+- Límite de uso: que se rechaza un turno cuando se supera el umbral, y que se guarda un hash de IP,
+  nunca la IP en claro.
 
 ### No testear (o mockear)
 - Estilo puramente visual (colores, tipografía, espaciado) — sin tests de regresión visual en esta
