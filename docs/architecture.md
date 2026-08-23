@@ -175,7 +175,7 @@ para conducir la entrevista, y redacta el informe/diagnóstico narrativo leyendo
 calculado por `lib/motor/`.
 
 **Consecuencias:** `lib/motor/` es el módulo más sensible del proyecto — es donde vive el catálogo
-de 16 casos borde de `instrucciones-motor.md` §6 y toda `docs/criterio/reglas-recomendacion.md` traducida a
+de 17 casos borde de `instrucciones-motor.md` §6 y toda `docs/criterio/reglas-recomendacion.md` traducida a
 reglas de código. Necesita tests unitarios exhaustivos (ver `docs/testing.md`) precisamente porque
 sus cifras ya no pasan por revisión de un asesor antes de llegar al visitante.
 

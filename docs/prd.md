@@ -65,7 +65,7 @@ de partida para la siguiente conversación con esa persona — no como sustituto
   las preguntas, entonces el agente sigue el orden fijo de `plantilla-entrevista.md` (ingresos →
   gastos → deudas → ahorro/inversión → colchón → objetivo → horizonte/riesgo → edad/situación
   vital), una pregunta cada vez, respetando las reglas ya definidas de repregunta única, datos
-  sensibles saltables y tope de ~12 turnos.
+  sensibles saltables y tope de ~14 turnos.
   *Negativo:* dado un visitante que se niega a dar un dato sensible, cuando lo indica, entonces el
   agente lo marca como pendiente, avisa en una frase de que el diagnóstico será menos preciso en
   ese punto, y continúa sin insistir.

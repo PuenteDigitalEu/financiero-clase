@@ -21,10 +21,11 @@ Este módulo no se ejecuta nunca dentro de una entrevista con un cliente. Se act
 
 ## 2 · Parseo de la ficha
 
-- Claves esperadas: las del contrato del Módulo 1 (ver `instrucciones-sistema.md`) — `ingresos_netos_mensual`, `gastos_fijos_mensual`, `deudas_numero` + `deuda_N_tipo/importe/cuota`, `patrimonio_liquido`, `patrimonio_invertido`, `aportacion_mensual_actual`, `colchon_meses`, `objetivo_proposito/importe/plazo_anios`, `riesgo_tolerancia_declarada`, `riesgo_comportamiento_real`, `edad`, `personas_a_cargo`, `situacion_laboral`.
+- Claves esperadas: las del contrato del Módulo 1 (ver `instrucciones-sistema.md`) — `ingresos_netos_mensual`, `ingresos_estabilidad`, `gastos_fijos_mensual`, `deudas_numero` + `deuda_N_tipo/importe/cuota`, `deudas_interes_alto_declarado`, `patrimonio_liquido`, `patrimonio_invertido`, `patrimonio_distribucion`, `aportacion_mensual_actual`, `colchon_meses`, `objetivo_proposito/importe/plazo_anios`, `riesgo_tolerancia_declarada`, `riesgo_comportamiento_real`, `edad`, `personas_a_cargo`, `situacion_laboral`.
 - Cada valor lleva etiqueta `[confirmado|estimado|pendiente]`. Valor sin etiqueta → tratar como `estimado` y señalarlo como anomalía en la sección de calidad del dato.
 - Rangos dentro de un valor (p. ej. «300-400 €») → usar el extremo prudente según la dirección de sesgo de R9 (sesgo en datos estimados) y declararlo.
-- **Hueco conocido:** nuestra ficha no incluye `patrimonio_distribucion` (composición por clase de activo de lo ya invertido). Mientras no se añada a la entrevista, la transición del patrimonio (R7) queda siempre «pendiente» para clientes con `patrimonio_invertido` > 0 — no se inventa la composición.
+- `patrimonio_distribucion` alimenta la transición del patrimonio (R7) cuando está disponible (`confirmado` o `estimado`). Si viene `pendiente` o el cliente respondió "no lo sé", la transición sigue el tratamiento de C15: no se inventa la composición.
+- `deudas_interes_alto_declarado` es una señal de respaldo, no un sustituto de las filas de deuda: solo se usa para la priorización de R1 cuando `deudas_numero` queda `pendiente` (ver C17). Si las deudas sí están detalladas, este campo se ignora aunque tenga valor.
 
 ## 3 · Clasificación de la meta
 
@@ -71,8 +72,9 @@ Todo cálculo numérico se ejecuta con código, nunca a mano:
 | C12 | `patrimonio_invertido` = 0 | No hay transición que aplicar; proyección solo con aportaciones nuevas. |
 | C13 | Meta ya alcanzada (gap ≤ 0) | Constatarlo; describir mantenimiento y riesgos, sin inventar una meta nueva. |
 | C14 | Aportación requerida ≤ tope sostenible | Meta viable: se propone la requerida, no el tope máximo. |
-| C15 | `patrimonio_invertido` > 0 pero sin `patrimonio_distribucion` | Transición queda «pendiente» — no se inventa la composición (ver §2). |
+| C15 | `patrimonio_invertido` > 0 pero `patrimonio_distribucion` en `pendiente` (o «no lo sé») | Transición (R7) queda «pendiente» — no se inventa la composición (ver §2). |
 | C16 | Ficha con claves ausentes o formato roto | No adivinar: tratar como pendiente y reportar la anomalía. |
+| C17 | `deudas_numero` en `pendiente` pero `deudas_interes_alto_declarado` = `si` | Para la priorización (R1) se trata como si hubiera deuda cara: el ahorro no se destina a inversión hasta resolver esa deuda en la reunión. No se calcula amortización, cuota real ni impacto exacto en el flujo — solo la priorización cambia. Se señala explícitamente como caso `[estimado — sin detalle de la deuda]`. |
 
 Cualquier caso nuevo no listado aquí → regla rectora: pendiente para la reunión + proponer su incorporación a este catálogo.
 

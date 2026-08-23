@@ -62,8 +62,8 @@ Reglas que se derivan de eso:
 
 ### Sí testear
 - **`lib/motor/` completo:** flujo libre, % camino recorrido, proyección, gap, cartera objetivo
-  ponderada por composición, clasificación de la meta (§3), y **cada uno** de los 16 casos borde
-  del catálogo de `instrucciones-motor.md` §6 (C1–C16) con su propio test.
+  ponderada por composición, clasificación de la meta (§3), y **cada uno** de los 17 casos borde
+  del catálogo de `instrucciones-motor.md` §6 (C1–C17) con su propio test.
 - Modo del informe según calidad del dato (completo / condicionado / suspendido —
   `instrucciones-motor.md` §4), incluida la regla de que un modo `condicionado` o `suspendido`
   nunca debe devolver una propuesta ejecutable.
@@ -96,7 +96,7 @@ Reglas que se derivan de eso:
 - Describe en presente, redactado como el criterio de aceptación de la ficha: "calcula el flujo
   libre restando cuotas de deuda", "marca el informe como suspendido si las deudas están pendientes
   por negativa del cliente".
-- Cada caso borde del catálogo (`instrucciones-motor.md` §6) referencia su número (`C1`…`C16`) en
+- Cada caso borde del catálogo (`instrucciones-motor.md` §6) referencia su número (`C1`…`C17`) en
   el nombre del test, para poder cruzarlo con el catálogo sin buscar por contenido.
 - Un assert por test cuando sea posible; los tests de `lib/motor/` pueden agrupar varios asserts
   sobre el mismo resultado calculado una sola vez, si separar el cálculo sería artificial.
@@ -105,7 +105,7 @@ Reglas que se derivan de eso:
 
 ## Cobertura objetivo
 
-- **`lib/motor/`:** no se mide en porcentaje — el objetivo es que los 16 casos borde del catálogo
+- **`lib/motor/`:** no se mide en porcentaje — el objetivo es que los 17 casos borde del catálogo
   tengan cada uno su test, más los cálculos base (§5 de `instrucciones-motor.md`). Un archivo con
   100% de líneas cubiertas pero sin test para un caso borde no cumple el objetivo.
 - **Resto de lógica de negocio** (persistencia, envío de aviso, orquestación del chat): ≥ 80%.

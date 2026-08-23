@@ -32,7 +32,7 @@ Una fila por cada visitante que abre el chat, exista o no llegue a completarlo.
 | iniciada_en | timestamptz | Momento en que el visitante abrió el chat |
 | finalizada_en | timestamptz, nullable | Momento en que se cerró (completada o abandonada) |
 | estado | text — `'en_curso' \| 'completada' \| 'abandonada'` | Estado de la conversación |
-| turnos_totales | int | Número de intercambios pregunta-respuesta, para vigilar el tope de ~12 |
+| turnos_totales | int | Número de intercambios pregunta-respuesta, para vigilar el tope de ~14 |
 
 ### fichas
 Una fila por conversación completada — equivalente a `ficha-[nombre].md` del Módulo 1. Contiene
@@ -47,12 +47,18 @@ exactamente las claves fijas del contrato de `instrucciones-sistema.md`, salvo l
 | fecha_entrevista | date | Fecha de la entrevista |
 | ingresos_netos_mensual | numeric, nullable | — |
 | ingresos_netos_mensual_estado | dato_estado | — |
+| ingresos_estabilidad | text — `'estable' \| 'variable'`, nullable | — |
+| ingresos_estabilidad_estado | dato_estado | — |
 | gastos_fijos_mensual | numeric, nullable | — |
 | gastos_fijos_mensual_estado | dato_estado | — |
+| deudas_interes_alto_declarado | text — `'si' \| 'no' \| 'no_facilitado'`, nullable | Fallback binario cuando el cliente se niega a dar el detalle completo de sus deudas (regla de `plantilla-entrevista.md` bloque 3) — no sustituye a las filas de `deudas`, solo da una señal de prioridad cuando esas filas quedan pendientes |
+| deudas_interes_alto_declarado_estado | dato_estado | — |
 | patrimonio_liquido | numeric, nullable | — |
 | patrimonio_liquido_estado | dato_estado | — |
 | patrimonio_invertido | numeric, nullable | — |
 | patrimonio_invertido_estado | dato_estado | — |
+| patrimonio_distribucion | text, nullable | Reparto aproximado por clase de activo, en prosa; "no aplica" si `patrimonio_invertido` = 0 (regla de `plantilla-entrevista.md` bloque 4) |
+| patrimonio_distribucion_estado | dato_estado | — |
 | aportacion_mensual_actual | numeric, nullable | 0 si el cliente no aporta nada, no "pendiente" (regla de `plantilla-entrevista.md` bloque 4) |
 | aportacion_mensual_actual_estado | dato_estado | — |
 | colchon_meses | numeric, nullable | — |
@@ -74,11 +80,6 @@ exactamente las claves fijas del contrato de `instrucciones-sistema.md`, salvo l
 | situacion_laboral | text, nullable | — |
 | situacion_laboral_estado | dato_estado | — |
 | created_at | timestamptz | — |
-
-`patrimonio_distribucion` (composición por clase de activo de lo ya invertido) queda **fuera** del
-esquema a propósito: `instrucciones-motor.md` §2 señala que la entrevista actual no la recoge, y que
-mientras no se añada, la transición del patrimonio queda siempre "pendiente". No se inventa una
-columna para un dato que la entrevista no pregunta todavía.
 
 ### deudas
 Grupo repetible de la ficha (0 a N filas por ficha) — equivalente a las tripletas

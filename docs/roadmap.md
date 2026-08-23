@@ -13,7 +13,7 @@
       markdown locales. Prerrequisito de todo lo demás (ver decisión técnica en `architecture.md`).
 - [ ] Migración inicial de base de datos (`001_esquema_inicial.sql`, ver `docs/data-model.md`).
 - [ ] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
-      `lib/motor/` (TypeScript determinista, con el catálogo de 16 casos borde) — soporta `M-03`.
+      `lib/motor/` (TypeScript determinista, con el catálogo de 17 casos borde) — soporta `M-03`.
 - [ ] Landing pública con presentación de la asesoría y el agente — `M-01`.
 - [ ] Chat de entrevista guiada, Módulo 1 integrado con Claude — `M-02`.
 - [ ] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
