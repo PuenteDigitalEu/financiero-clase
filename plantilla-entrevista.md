@@ -111,7 +111,7 @@
 **Pregunta de seguimiento (siempre, tras la anterior):**
 > "Una última cosa sobre esto: ¿has vivido alguna vez una caída real de una inversión que tuvieras — bolsa, fondos, cripto, lo que sea? Si es así, ¿qué hiciste en ese momento: aguantaste, vendiste, o aprovechaste para meter más?"
 
-*(Si el cliente describe una reacción real a una caída de mercado, ese dato se guarda en `riesgo_comportamiento_real` y prevalece sobre la respuesta hipotética anterior a la hora de asignar el perfil de riesgo — ver `docs/criterio/politica-de-inversion.md`. Si nunca ha vivido una caída real, se guarda "sin dato" y se usa la tolerancia declarada tal cual.)*
+*(Si el cliente describe una reacción real a una caída de mercado, ese dato se guarda en `riesgo_comportamiento_real` y prevalece sobre la respuesta hipotética anterior a la hora de asignar el perfil de riesgo — ver `docs/criterio/reglas-recomendacion.md`. Si nunca ha vivido una caída real, se guarda "sin dato" y se usa la tolerancia declarada tal cual.)*
 
 ---
 

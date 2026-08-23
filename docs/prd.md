@@ -11,7 +11,7 @@
 Landing page para la asesoría financiera del usuario, con un agente conversacional (chatbot)
 integrado que conduce a cada visitante a través del diagnóstico financiero inicial ya diseñado
 (`plantilla-entrevista.md`) y, al cerrar la conversación, ejecuta el motor de análisis
-(`docs/criterio/politica-de-inversion.md` + `instrucciones-motor.md`) para mostrarle en el propio chat un
+(`docs/criterio/reglas-recomendacion.md` + `instrucciones-motor.md`) para mostrarle en el propio chat un
 diagnóstico y una propuesta preliminar.
 
 El acceso es cerrado: no hay tráfico orgánico ni SEO — se llega mediante una URL que el asesor
@@ -76,7 +76,7 @@ de partida para la siguiente conversación con esa persona — no como sustituto
   mismo momento, el diagnóstico (situación actual, % de camino recorrido, proyección, gap) y la
   propuesta preliminar (aportación, cartera objetivo), acompañados siempre del disclaimer de que es
   orientación educativa no regulada y que el asesor la revisará después.
-  *Negativo:* dado un caso con datos críticos pendientes (política §10) o flujo libre ≤ 0, cuando
+  *Negativo:* dado un caso con datos críticos pendientes (R9) o flujo libre ≤ 0, cuando
   se genera el diagnóstico, entonces el chat muestra únicamente escenarios condicionados o el modo
   de estabilización correspondiente — nunca una propuesta ejecutable no soportada por los datos.
 
@@ -103,8 +103,8 @@ de partida para la siguiente conversación con esa persona — no como sustituto
 - Cobro o pago dentro del sitio (la herramienta es de captación, gratuita).
 - URLs personalizadas por destinatario (el enlace es genérico para todos; el chat pregunta el
   nombre como parte de la entrevista).
-- Simulación de probabilidad de cumplimiento por Monte Carlo (`docs/criterio/politica-de-inversion.md` §11 ya la
-  deja marcada como no implementada en el motor; este proyecto no la añade).
+- Simulación de probabilidad de cumplimiento por Monte Carlo (`docs/criterio/reglas-recomendacion.md`,
+  R10, ya la deja marcada como no implementada en el motor; este proyecto no la añade).
 - Recomendación de productos financieros concretos (excluido por política de inversión, no es
   negociable en esta capa).
 - Soporte multi-asesor / multi-tenant (el producto es para una sola asesoría).

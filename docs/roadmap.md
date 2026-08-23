@@ -12,7 +12,7 @@
       diagnóstico mostrado al visitante en el chat, persistencia en Supabase en vez de archivos
       markdown locales. Prerrequisito de todo lo demás (ver decisión técnica en `architecture.md`).
 - [ ] Migración inicial de base de datos (`001_esquema_inicial.sql`, ver `docs/data-model.md`).
-- [ ] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/politica-de-inversion.md` a
+- [ ] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
       `lib/motor/` (TypeScript determinista, con el catálogo de 16 casos borde) — soporta `M-03`.
 - [ ] Landing pública con presentación de la asesoría y el agente — `M-01`.
 - [ ] Chat de entrevista guiada, Módulo 1 integrado con Claude — `M-02`.
@@ -43,8 +43,8 @@ conversación manual.
 ## Fase 3 — Escalado
 
 - [ ] Historial accesible para el propio visitante (`C-01`).
-- [ ] Simulación de probabilidad de cumplimiento por Monte Carlo (`docs/criterio/politica-de-inversion.md` §11),
-      hoy marcada explícitamente "no implementada" en `instrucciones-motor.md` §5.
+- [ ] Simulación de probabilidad de cumplimiento por Monte Carlo (`docs/criterio/reglas-recomendacion.md`,
+      R10), hoy marcada explícitamente "no implementada" en `instrucciones-motor.md` §5.
 - [ ] URLs personalizadas por destinatario, si el volumen de leads justifica dejar de usar un
       enlace genérico.
 

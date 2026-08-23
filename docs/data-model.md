@@ -118,7 +118,7 @@ la misma ficha, se versiona con una fila nueva en vez de sobrescribir, igual que
 | gap_anios | numeric, nullable | — |
 | aportacion_propuesta | numeric, nullable | Solo en modo `completo` |
 | cartera_objetivo | jsonb, nullable | `{ renta_variable, renta_fija, liquidez, oro, cripto }` en % |
-| rentabilidad_esperada_neta | numeric, nullable | Ponderada por composición, neta de costes (política §5) |
+| rentabilidad_esperada_neta | numeric, nullable | Ponderada por composición, neta de costes (R5) |
 | contenido | jsonb | Estructura completa del informe (Partes A/B/C de `instrucciones-motor.md` §7: diagnóstico, propuesta preliminar, trazabilidad y pendientes) — es lo que redacta `DiagnosisCard` |
 | pendientes_reunion | jsonb | Array de strings — casos borde o datos pendientes que quedan para que el asesor los trate en la reunión |
 | created_at | timestamptz | — |

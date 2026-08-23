@@ -79,7 +79,7 @@ traduciéndolos, no reescribiéndolos libremente:
 - `instrucciones-sistema.md` — guion y contrato de datos del Módulo 1 (entrevista).
 - `instrucciones-motor.md` — pipeline y catálogo de casos borde del Módulo 2 (análisis).
 - `plantilla-entrevista.md` — guion completo de la entrevista, pregunta a pregunta.
-- `docs/criterio/politica-de-inversion.md` — fuente única de criterio financiero del motor.
+- `docs/criterio/reglas-recomendacion.md` — fuente única de criterio financiero del motor (R1–R10).
 
 ## Cómo contribuir
 

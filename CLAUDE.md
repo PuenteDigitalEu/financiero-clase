@@ -193,8 +193,8 @@ scripts/          → scripts de verificación (cobertura de tests declarados en
   versión (diagnóstico mostrado directamente al visitante, persistencia en Supabase). Tal como
   están escritas hoy, ambas prohíben explícitamente lo que este proyecto construye.
 - No inventes ni completes un dato financiero que la ficha marca como `pendiente`. Si falta un
-  dato crítico (política de inversión §10), el informe se queda en modo condicionado o suspendido
-  — nunca se rellena el hueco con una estimación no declarada.
+  dato crítico (regla R9 de `docs/criterio/reglas-recomendacion.md`), el informe se queda en modo
+  condicionado o suspendido — nunca se rellena el hueco con una estimación no declarada.
 - No le muestres al visitante una propuesta ejecutable (aportación, cartera) en modo
   `condicionado` o `suspendido`. Es la línea roja del propio `instrucciones-motor.md` §4.
 
@@ -311,10 +311,10 @@ Si la carpeta `mejoras/` no existe, créala.
 - **Primera tarea real de implementación, antes que cualquier UI:** reescribir
   `instrucciones-sistema.md` e `instrucciones-motor.md` para el flujo de esta versión (ver
   decisión técnica en `docs/architecture.md`), y portar los cálculos de
-  `docs/criterio/politica-de-inversion.md` a `lib/motor/`. Sin eso no hay system prompt válido ni
+  `docs/criterio/reglas-recomendacion.md` a `lib/motor/`. Sin eso no hay system prompt válido ni
   motor determinista contra los que construir `app/api/chat/`.
 - Los documentos de trabajo que ya existían antes de este repo (`plantilla-entrevista.md`,
-  `docs/criterio/politica-de-inversion.md`, fichas y diagnósticos de prueba en la raíz del
+  `docs/criterio/reglas-recomendacion.md`, fichas y diagnósticos de prueba en la raíz del
   proyecto) son la fuente de verdad del negocio: no se reescriben libremente, se traducen a
   código y a los documentos de `docs/` respetando sus reglas.
 - Proyecto Supabase ya provisionado: `ekuxwmktzasyxvziijdz.supabase.co`. Variables en

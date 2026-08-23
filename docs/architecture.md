@@ -71,7 +71,7 @@ src/
 ├── lib/
 │   ├── supabase/               → Cliente Supabase (browser y server) y helpers
 │   ├── claude/                 → Cliente Anthropic, carga de system prompts
-│   └── motor/                  → Puerto en código de instrucciones-motor.md + docs/criterio/politica-de-inversion.md:
+│   └── motor/                  → Puerto en código de instrucciones-motor.md + docs/criterio/reglas-recomendacion.md:
 │                                  flujo libre, % camino recorrido, proyección, gap, cartera ponderada.
 │                                  Ningún cálculo numérico se le pide al modelo de lenguaje (ver
 │                                  "Decisiones técnicas relevantes").
@@ -159,7 +159,7 @@ de que el usuario lo ejecute.
 ### 2026-08-18 — Los cálculos numéricos del motor se ejecutan en código, no por el modelo de lenguaje
 
 **Contexto:** `instrucciones-motor.md` es explícito: "todo cálculo numérico se ejecuta con código,
-nunca a mano" (§5), y lo mismo exige `docs/criterio/politica-de-inversion.md` en sus "Límites duros" ("todo
+nunca a mano" (§5), y lo mismo exige `docs/criterio/reglas-recomendacion.md` en sus "Límites duros" ("todo
 número sale de código ejecutado"). Esto ya estaba decidido para el uso interno del asesor; sigue
 aplicando ahora que el resultado se muestra directamente al visitante — con más razón, porque aquí
 no hay revisión humana antes de que la cifra llegue a alguien.
@@ -175,7 +175,7 @@ para conducir la entrevista, y redacta el informe/diagnóstico narrativo leyendo
 calculado por `lib/motor/`.
 
 **Consecuencias:** `lib/motor/` es el módulo más sensible del proyecto — es donde vive el catálogo
-de 16 casos borde de `instrucciones-motor.md` §6 y toda `docs/criterio/politica-de-inversion.md` traducida a
+de 16 casos borde de `instrucciones-motor.md` §6 y toda `docs/criterio/reglas-recomendacion.md` traducida a
 reglas de código. Necesita tests unitarios exhaustivos (ver `docs/testing.md`) precisamente porque
 sus cifras ya no pasan por revisión de un asesor antes de llegar al visitante.
 
