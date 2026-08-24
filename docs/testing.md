@@ -64,6 +64,10 @@ Reglas que se derivan de eso:
 - **`lib/motor/` completo:** flujo libre, % camino recorrido, proyección, gap, cartera objetivo
   ponderada por composición, clasificación de la meta (§3), y **cada uno** de los 17 casos borde
   del catálogo de `instrucciones-motor.md` §6 (C1–C17) con su propio test.
+- **Monte Carlo (R10, `M-07`):** con semilla fija, el mismo caso debe dar siempre el mismo
+  resultado (reproducibilidad); los umbrales de banda (Alta ≥80 %, Razonable 65–79 %, Frágil
+  50–64 %, Baja <50 %); y que no se calcula cuando la meta no es convertible a patrimonio o el
+  modo no es `completo` (debe quedar `null`, no una cifra aproximada).
 - Modo del informe según calidad del dato (completo / condicionado / suspendido —
   `instrucciones-motor.md` §4), incluida la regla de que un modo `condicionado` o `suspendido`
   nunca debe devolver una propuesta ejecutable.

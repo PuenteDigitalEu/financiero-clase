@@ -121,6 +121,9 @@ numerados) al construir la UI.
 Card diferenciada que presenta el diagnóstico y la propuesta preliminar generados por el motor al
 final de la conversación (`M-03` del PRD). Usa cifras con `tabular-nums`, jerarquía tipográfica
 clara entre situación actual / proyección / gap, y lleva siempre el `DisclosureBanner` adjunto.
+Cuando aplica (`M-07`), incluye la probabilidad de cumplimiento como banda (Alta/Razonable/Frágil/
+Baja) con su rango de percentiles — nunca como una única cifra determinista, para no dar una falsa
+sensación de precisión.
 
 ---
 

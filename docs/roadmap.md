@@ -13,7 +13,10 @@
       markdown locales. Prerrequisito de todo lo demás (ver decisión técnica en `architecture.md`).
 - [ ] Migración inicial de base de datos (`001_esquema_inicial.sql`, ver `docs/data-model.md`).
 - [ ] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
-      `lib/motor/` (TypeScript determinista, con el catálogo de 17 casos borde) — soporta `M-03`.
+      `lib/motor/` (TypeScript determinista, con el catálogo de 17 casos borde), incluida la
+      simulación Monte Carlo de R10 — soporta `M-03` y `M-07`. Hay una implementación de
+      referencia (Python + su port a TypeScript) que reduce el coste de construir esto de cero;
+      revisarla antes de escribir el port propio.
 - [ ] Landing pública con presentación de la asesoría y el agente — `M-01`.
 - [ ] Chat de entrevista guiada, Módulo 1 integrado con Claude — `M-02`.
 - [ ] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
@@ -47,8 +50,6 @@ conversación manual.
 ## Fase 3 — Escalado
 
 - [ ] Historial accesible para el propio visitante (`C-01`).
-- [ ] Simulación de probabilidad de cumplimiento por Monte Carlo (`docs/criterio/reglas-recomendacion.md`,
-      R10), hoy marcada explícitamente "no implementada" en `instrucciones-motor.md` §5.
 - [ ] URLs personalizadas por destinatario, si el volumen de leads justifica dejar de usar un
       enlace genérico.
 

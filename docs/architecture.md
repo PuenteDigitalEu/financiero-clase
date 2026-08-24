@@ -76,9 +76,9 @@ src/
 │   ├── supabase/               → Cliente Supabase (browser y server) y helpers
 │   ├── claude/                 → Cliente Anthropic, carga de system prompts
 │   └── motor/                  → Puerto en código de instrucciones-motor.md + docs/criterio/reglas-recomendacion.md:
-│                                  flujo libre, % camino recorrido, proyección, gap, cartera ponderada.
-│                                  Ningún cálculo numérico se le pide al modelo de lenguaje (ver
-│                                  "Decisiones técnicas relevantes").
+│                                  flujo libre, % camino recorrido, proyección, gap, cartera ponderada,
+│                                  probabilidad Monte Carlo (R10). Ningún cálculo numérico se le pide
+│                                  al modelo de lenguaje (ver "Decisiones técnicas relevantes").
 └── types/                      → Tipos compartidos (ficha, diagnóstico, conversación)
 
 docs/             → documentación del proyecto (ver sección anterior)

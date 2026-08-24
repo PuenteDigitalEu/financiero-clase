@@ -95,6 +95,14 @@ de partida para la siguiente conversación con esa persona — no como sustituto
   *Negativo:* dado un visitante que no acepta, cuando cierra o abandona esa pantalla, entonces no
   queda ninguna fila de conversación ni dato personal asociado.
 
+- **[M-07] Probabilidad de cumplimiento (Monte Carlo)** — Dado un caso en modo `completo` con meta
+  convertible a patrimonio, cuando se genera el diagnóstico, entonces el chat muestra la
+  probabilidad de alcanzar la meta como banda (Alta/Razonable/Frágil/Baja) y como percentiles
+  pesimista/central/optimista en euros actuales — nunca como una cifra determinista única.
+  *Negativo:* dado un caso en modo `condicionado` o `suspendido`, o sin meta convertible a
+  patrimonio, cuando se genera el diagnóstico, entonces no se muestra probabilidad de cumplimiento
+  (no aplica, no se inventa una cifra aproximada).
+
 ### SHOULD
 - **[S-01] Panel de consulta para el asesor** — Dado que el asesor quiere revisar casos pasados,
   cuando accede al panel, entonces ve el listado de conversaciones completadas con su ficha y
@@ -110,8 +118,6 @@ de partida para la siguiente conversación con esa persona — no como sustituto
 - Cobro o pago dentro del sitio (la herramienta es de captación, gratuita).
 - URLs personalizadas por destinatario (el enlace es genérico para todos; el chat pregunta el
   nombre como parte de la entrevista).
-- Simulación de probabilidad de cumplimiento por Monte Carlo (`docs/criterio/reglas-recomendacion.md`,
-  R10, ya la deja marcada como no implementada en el motor; este proyecto no la añade).
 - Recomendación de productos financieros concretos (excluido por política de inversión, no es
   negociable en esta capa).
 - Soporte multi-asesor / multi-tenant (el producto es para una sola asesoría).

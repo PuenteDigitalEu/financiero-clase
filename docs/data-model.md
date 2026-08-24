@@ -160,6 +160,11 @@ la misma ficha, se versiona con una fila nueva en vez de sobrescribir, igual que
 | aportacion_propuesta | numeric, nullable | Solo en modo `completo` |
 | cartera_objetivo | jsonb, nullable | `{ renta_variable, renta_fija, liquidez, oro, cripto }` en % |
 | rentabilidad_esperada_neta | numeric, nullable | Ponderada por composición, neta de costes (R5) |
+| mc_percentil_pesimista | numeric, nullable | Percentil p10 del Monte Carlo (R10), euros actuales — solo si aplica (meta convertible a patrimonio, modo `completo`) |
+| mc_percentil_central | numeric, nullable | Percentil p50 |
+| mc_percentil_optimista | numeric, nullable | Percentil p90 |
+| mc_probabilidad_cumplimiento | numeric, nullable | Fracción 0–1 — soporta `M-07` |
+| mc_banda | text — `'alta' \| 'razonable' \| 'fragil' \| 'baja'`, nullable | Banda de R10 derivada de `mc_probabilidad_cumplimiento` |
 | contenido | jsonb | Estructura completa del informe (Partes A/B/C de `instrucciones-motor.md` §7: diagnóstico, propuesta preliminar, trazabilidad y pendientes) — uso interno, nunca se muestra tal cual al visitante |
 | pendientes_reunion | jsonb | Array de strings — casos borde o datos pendientes que quedan para que el asesor los trate en la reunión |
 | version_motor | text | Versión de `lib/motor/` usada para este cálculo |

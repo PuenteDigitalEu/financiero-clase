@@ -52,7 +52,7 @@ Todo cálculo numérico se ejecuta con código, nunca a mano:
 - Con flujo libre > 0: % camino recorrido, proyección a ritmo actual, gap, aportación necesaria vs. tope sostenible, escenarios de inviabilidad si tocan.
 - Cartera objetivo: base por perfil + ajuste por plazo → rentabilidad esperada **ponderada por composición**, neta de costes. Nunca usar los % de rentabilidad fijos por perfil si la cartera se ajustó por plazo — recalcular la ponderada.
 - Redondeo: euros enteros; porcentajes con 1 decimal.
-- **Fuera de alcance por ahora:** R10 define un cálculo de probabilidad por Monte Carlo. No está implementado. Mientras tanto, esa cifra queda «pendiente — requiere motor de simulación no implementado»; no se inventa una probabilidad.
+- **Probabilidad de cumplimiento (R10):** simulación Monte Carlo (≥10.000 trayectorias mensuales, parámetros de volatilidad y correlación de R10), aplicable cuando la meta es convertible a patrimonio y el modo es `completo`. Salida en euros actuales: percentiles p10/p50/p90 y probabilidad de cumplimiento con su banda (Alta/Razonable/Frágil/Baja). Nunca se presenta como cifra determinista única. Fuera de estos dos requisitos (meta convertible + modo completo), no se calcula: no aplica, no "pendiente".
 
 ## 6 · Catálogo de casos borde
 
@@ -91,19 +91,21 @@ Cualquier caso nuevo no listado aquí → regla rectora: pendiente para la reuni
 3. Camino recorrido          (% — solo si la meta es convertible a patrimonio)
 4. Proyección a ritmo actual (valor futuro central; supuestos explícitos)
 5. Gap                       (€ y tiempo)
-6. Calidad del dato          (etiquetas, supuestos aplicados y su sesgo)
-7. Señales para la reunión   (solo hechos observables)
+6. Probabilidad (R10)        (percentiles p10/p50/p90 y banda — solo si aplica, ver §5)
+7. Calidad del dato          (etiquetas, supuestos aplicados y su sesgo)
+8. Señales para la reunión   (solo hechos observables)
 
 ## Parte B — Propuesta preliminar (BORRADOR para revisión del asesor)
-8.  Prioridades aplicadas     (orden de R1 sobre este cliente, paso a paso)
-9.  Aportación propuesta      (cálculo del tope y la cifra)
-10. Cartera objetivo          (ajustada por plazo + rentabilidad derivada)
-11. Transición del patrimonio (o «pendiente» si falta la composición)
-12. Viabilidad y escenarios   (si aplica: las 4 palancas cuantificadas, sin elegir una)
+9.  Prioridades aplicadas     (orden de R1 sobre este cliente, paso a paso)
+10. Aportación propuesta      (cálculo del tope y la cifra)
+11. Cartera objetivo          (ajustada por plazo + rentabilidad derivada)
+12. Transición del patrimonio (o «pendiente» si falta la composición)
+13. Viabilidad y escenarios   (si aplica: las 4 palancas cuantificadas con su probabilidad R10,
+                              sin elegir una)
 
 ## Parte C — Control
-13. Trazabilidad             (cada cifra → dato de ficha o regla de `reglas-recomendacion.md`)
-14. Pendientes para la reunión (los de la ficha + los generados por el motor)
+14. Trazabilidad             (cada cifra → dato de ficha o regla de `reglas-recomendacion.md`)
+15. Pendientes para la reunión (los de la ficha + los generados por el motor)
 ```
 
 - Parte A describe, nunca valora ni recomienda.
