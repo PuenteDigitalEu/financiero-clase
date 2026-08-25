@@ -1,0 +1,117 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mockCreate = vi.fn();
+
+// Mockeado a propósito: esto verifica la LÓGICA de la ruta (validación, tope de turnos, manejo
+// de errores) sin necesitar una ANTHROPIC_API_KEY real. Lo único que este archivo NO prueba es
+// si la llamada real a Claude funciona — eso solo se verifica en local con una clave de verdad
+// (ver docs/roadmap.md).
+vi.mock("@/lib/claude/client", () => ({
+  clienteClaude: () => ({ messages: { create: mockCreate } }),
+  MODELO_ENTREVISTA: "claude-sonnet-5",
+}));
+
+vi.mock("@/lib/claude/system-prompt", () => ({
+  cargarSystemPromptEntrevista: () => "system prompt de prueba",
+}));
+
+const { POST } = await import("./route");
+
+function req(body: unknown): Request {
+  return new Request("http://localhost/api/chat", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+describe("POST /api/chat", () => {
+  beforeEach(() => {
+    mockCreate.mockReset();
+  });
+
+  it("rechaza JSON inválido", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/chat", { method: "POST", body: "{invalido" }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('rechaza si "messages" no es un array', async () => {
+    const res = await POST(req({ messages: "hola" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("rechaza mensajes con role inválido", async () => {
+    const res = await POST(req({ messages: [{ role: "system", content: "x" }] }));
+    expect(res.status).toBe(400);
+  });
+
+  it("rechaza mensajes sin content de tipo string", async () => {
+    const res = await POST(req({ messages: [{ role: "user", content: 42 }] }));
+    expect(res.status).toBe(400);
+  });
+
+  it("rechaza conversación vacía", async () => {
+    const res = await POST(req({ messages: [] }));
+    expect(res.status).toBe(400);
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("rechaza por encima del tope de turnos", async () => {
+    const mensajes = Array.from({ length: 41 }, (_, i) => ({
+      role: i % 2 === 0 ? "user" : "assistant",
+      content: "x",
+    }));
+    const res = await POST(req({ messages: mensajes }));
+    expect(res.status).toBe(400);
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("acepta justo en el tope de turnos", async () => {
+    mockCreate.mockResolvedValue({ content: [{ type: "text", text: "ok" }] });
+    const mensajes = Array.from({ length: 40 }, (_, i) => ({
+      role: i % 2 === 0 ? "user" : "assistant",
+      content: "x",
+    }));
+    const res = await POST(req({ messages: mensajes }));
+    expect(res.status).toBe(200);
+  });
+
+  it("llama a Claude con el system prompt correcto y devuelve su respuesta", async () => {
+    mockCreate.mockResolvedValue({
+      content: [{ type: "text", text: "Hola, ¿cómo te llamas?" }],
+    });
+    const res = await POST(req({ messages: [{ role: "user", content: "Hola" }] }));
+
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.message).toEqual({ role: "assistant", content: "Hola, ¿cómo te llamas?" });
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "claude-sonnet-5",
+        system: "system prompt de prueba",
+        messages: [{ role: "user", content: "Hola" }],
+      }),
+    );
+  });
+
+  it("concatena solo los bloques de texto de una respuesta con varios bloques", async () => {
+    mockCreate.mockResolvedValue({
+      content: [
+        { type: "text", text: "Primera parte." },
+        { type: "text", text: "Segunda parte." },
+      ],
+    });
+    const res = await POST(req({ messages: [{ role: "user", content: "Hola" }] }));
+    const data = await res.json();
+    expect(data.message.content).toBe("Primera parte.\nSegunda parte.");
+  });
+
+  it("devuelve 502 (no 500 sin explicación) si la llamada a Claude falla", async () => {
+    mockCreate.mockRejectedValue(new Error("boom"));
+    const res = await POST(req({ messages: [{ role: "user", content: "Hola" }] }));
+    expect(res.status).toBe(502);
+    const data = await res.json();
+    expect(data.error).toBeTruthy();
+  });
+});

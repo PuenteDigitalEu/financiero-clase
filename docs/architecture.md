@@ -255,7 +255,7 @@ Sección viva: cada vez que algo del stack cueste más tiempo del esperado o se 
 obvia durante la implementación, se anota aquí para no volver a perder ese tiempo. Se actualiza en
 la misma sesión en la que se descubre el problema, no al final.
 
-Todavía no hay ninguna: la implementación no ha empezado. Formato sugerido por entrada:
+Formato por entrada:
 
 ```
 ### [Fecha] — [Qué costó tiempo]
@@ -263,3 +263,21 @@ Todavía no hay ninguna: la implementación no ha empezado. Formato sugerido por
 **Causa:** por qué pasaba de verdad.
 **Solución / mitigación:** qué se hizo.
 ```
+
+### 2026-08-25 — `readFileSync` con ruta dinámica empaqueta el proyecto entero al desplegar
+
+**Síntoma:** `pnpm build` avisa, al compilar `app/api/chat/`: "Static analysis determined that
+this filesystem access causes the whole project to be traced and included in the output" — con
+riesgo real de despliegues más lentos o de superar límites de tamaño en Vercel.
+
+**Causa:** `lib/claude/system-prompt.ts` leía `instrucciones-sistema.md` y
+`plantilla-entrevista.md` con `readFileSync(join(process.cwd(), nombre))`, donde `nombre` era un
+parámetro de función. El trazador de archivos de Next.js (necesario para saber qué incluir en el
+paquete serverless) no puede resolver rutas dinámicas en tiempo de build, así que por seguridad
+empaqueta el proyecto completo.
+
+**Solución / mitigación:** escribir las dos llamadas a `readFileSync` con la ruta en literal
+directamente (`join(process.cwd(), "instrucciones-sistema.md")`), sin pasar por una variable ni un
+parámetro. El trazador sí puede seguir una ruta literal. Si en el futuro se necesita leer más
+documentos de la raíz desde código de servidor, mantener el mismo patrón — una llamada literal por
+archivo, no una función genérica con el nombre como argumento.
