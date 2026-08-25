@@ -311,10 +311,12 @@ Si la carpeta `mejoras/` no existe, créala.
 
 - **Estado de la implementación:** `instrucciones-sistema.md` e `instrucciones-motor.md` ya están
   reescritos para el flujo de esta versión (2026-08-24, ver decisión técnica en
-  `docs/architecture.md`). Falta portar los cálculos de `docs/criterio/reglas-recomendacion.md` a
-  `lib/motor/` (hay una implementación de referencia verificada, ver `docs/roadmap.md`), la
-  migración inicial de Supabase, y todo lo demás de la Fase 1 del roadmap — nada de código de la
-  aplicación existe todavía.
+  `docs/architecture.md`). El proyecto Next.js está escafoldado (`pnpm install` / `pnpm build`
+  funcionan) y `supabase/migrations/001_esquema_inicial.sql` está escrita y verificada localmente,
+  pero no aplicada contra el Supabase real (faltan credenciales en este entorno). Falta portar los
+  cálculos de `docs/criterio/reglas-recomendacion.md` a `lib/motor/` (hay una implementación de
+  referencia verificada, ver `docs/roadmap.md`) y el resto de la Fase 1: landing, chat, envío de
+  email, consentimiento y límite de uso — todavía sin código propio.
 - Los documentos de trabajo que ya existían antes de este repo (`plantilla-entrevista.md`,
   `docs/criterio/reglas-recomendacion.md`, fichas y diagnósticos de prueba en la raíz del
   proyecto) son la fuente de verdad del negocio: no se reescriben libremente, se traducen a

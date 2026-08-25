@@ -242,16 +242,25 @@ RLS **activado** en las nueve tablas (`asesores`, `clientes`, `conversaciones`, 
 
 ## Migraciones
 
-Ninguna aplicada todavía — el proyecto está en fase de documentación, no de implementación. Primera
-migración planeada:
+Escrita, verificada localmente y **todavía no aplicada** contra el proyecto Supabase real.
 
 | Fecha | Archivo | Descripción |
 |-------|---------|-------------|
-| _pendiente_ | `001_esquema_inicial.sql` | Crea el enum `dato_estado` y las tablas `asesores`, `clientes`, `conversaciones`, `fichas`, `deudas`, `informes`, `planes`, `notificaciones_asesor`, `limites_uso`, con sus RLS y la función `es_asesor()` |
+| 2026-08-25 (escrita) | `supabase/migrations/001_esquema_inicial.sql` | Crea el enum `dato_estado` y las tablas `asesores`, `clientes`, `conversaciones`, `limites_uso`, `fichas`, `deudas`, `informes`, `planes`, `notificaciones_asesor`, con sus RLS y la función `es_asesor()` |
 
-El servidor MCP de Supabase está registrado en modo `read_only=true` (ver `architecture.md` →
-"MCPs del proyecto"): no puede aplicar esta migración tal cual está configurado. Habrá que quitar
-esa restricción cuando se implemente, o aplicar la migración desde el CLI/dashboard de Supabase.
+**Verificación realizada:** ejecutada contra Postgres real vía PGlite (WASM), con roles
+`authenticated`/`anon`/`service_role` y un `auth.users`/`auth.uid()` mínimos simulados (Supabase los
+provee de forma nativa). Se comprobó: la migración aplica sin errores; RLS queda activado en las 9
+tablas; inserción de una fila completa por toda la cadena de FKs (`clientes` → `conversaciones` →
+`fichas` → `deudas` → `informes` → `planes`); los `check` de dominio (p. ej.
+`ingresos_estabilidad`) rechazan valores fuera de lista; `conversaciones.consentimiento_en not null`
+impide crear una conversación sin consentimiento (`M-06`).
+
+**No aplicada aún contra Supabase real:** el servidor MCP está en modo `read_only=true` (ver
+"MCPs del proyecto" en `architecture.md`) y no se dispone de `SUPABASE_SERVICE_ROLE_KEY` en este
+entorno — ninguno de los dos permite aplicar migraciones desde aquí. Aplicarla requiere quitar esa
+restricción del MCP o usar el CLI/dashboard de Supabase con las credenciales reales, y es una
+acción sobre infraestructura compartida que le corresponde ejecutar al usuario.
 
 ---
 

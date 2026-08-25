@@ -83,9 +83,14 @@ src/
 
 docs/             → documentación del proyecto (ver sección anterior)
 docs/features/    → fichas de las features acordadas, con su tabla de cobertura
+supabase/migrations/ → migraciones SQL versionadas (ver docs/data-model.md → "Migraciones")
 changelog/        → registro de cambios (ver protocolo más abajo)
 mejoras/          → ideas futuras no implementadas
 ```
+
+**Estado real (2026-08-25):** `src/app/` existe con el layout y una página placeholder — la
+landing, el chat y el panel de arriba todavía no están construidos. `lib/motor/` y
+`lib/supabase/`/`lib/claude/` tampoco existen todavía.
 
 ---
 

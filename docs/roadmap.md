@@ -14,7 +14,9 @@
       2026-08-24 (ver decisión técnica en `architecture.md`). De paso se añadió el bloque 0 de
       `plantilla-entrevista.md` (nombre + email), que faltaba y sin el cual `clientes`/`M-05`
       nunca podían funcionar.
-- [ ] Migración inicial de base de datos (`001_esquema_inicial.sql`, ver `docs/data-model.md`).
+- [x] Migración inicial de base de datos escrita y verificada localmente
+      (`supabase/migrations/001_esquema_inicial.sql`, ver `docs/data-model.md`). Falta aplicarla
+      contra el Supabase real — requiere credenciales que no están disponibles en este entorno.
 - [ ] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
       `lib/motor/` (TypeScript determinista, con el catálogo de 17 casos borde), incluida la
       simulación Monte Carlo de R10 — soporta `M-03` y `M-07`. Hay una implementación de
