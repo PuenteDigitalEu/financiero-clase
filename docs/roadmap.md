@@ -17,11 +17,16 @@
 - [x] Migración inicial de base de datos escrita y verificada localmente
       (`supabase/migrations/001_esquema_inicial.sql`, ver `docs/data-model.md`). Falta aplicarla
       contra el Supabase real — requiere credenciales que no están disponibles en este entorno.
-- [ ] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
-      `lib/motor/` (TypeScript determinista, con el catálogo de 17 casos borde), incluida la
-      simulación Monte Carlo de R10 — soporta `M-03` y `M-07`. Hay una implementación de
-      referencia (Python + su port a TypeScript) que reduce el coste de construir esto de cero;
-      revisarla antes de escribir el port propio.
+- [~] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
+      `lib/motor/` (TypeScript determinista) — soporta `M-03` y `M-07`. **Hecho:** las funciones
+      puras (R1–R10: flujo libre, aportación propuesta, cartera ajustada por plazo, rentabilidad y
+      volatilidad, proyección determinista, conversión de meta de renta, Monte Carlo con semilla
+      fija) en `src/lib/motor/{supuestos,numerico,aleatorio,calculos}.ts`, más los tipos de la
+      ficha y `determinarModo`/`clasificarMeta` en `ficha.ts` — 41 tests, todos verificados
+      ejecutando de verdad (`pnpm test`), no solo leídos. **Falta:** la orquestación completa que
+      recibe una `Ficha` y aplica el catálogo de 17 casos borde entero (C1–C17) para producir el
+      informe final — se deja para cuando se construya junto con `app/api/chat/`, porque depende
+      de cómo se parsea la ficha ahí; hacerla antes, a ciegas, se tendría que rehacer.
 - [ ] Landing pública con presentación de la asesoría y el agente — `M-01`.
 - [ ] Chat de entrevista guiada, Fases 1-2 (`instrucciones-sistema.md`) integradas con Claude — `M-02`.
 - [ ] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
