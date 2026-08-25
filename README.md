@@ -76,8 +76,8 @@ Además de `docs/`, la raíz del repo tiene los documentos originales que define
 propio agente y de la asesoría — son la fuente de verdad del negocio, y el código se construye
 traduciéndolos, no reescribiéndolos libremente:
 
-- `instrucciones-sistema.md` — guion y contrato de datos del Módulo 1 (entrevista).
-- `instrucciones-motor.md` — pipeline y catálogo de casos borde del Módulo 2 (análisis).
+- `instrucciones-sistema.md` — guion y contrato de datos de las Fases 1-2 (entrevista y ficha).
+- `instrucciones-motor.md` — pipeline, catálogo de casos borde y entrega del plan (Fases 3-4).
 - `plantilla-entrevista.md` — guion completo de la entrevista, pregunta a pregunta.
 - `docs/criterio/reglas-recomendacion.md` — fuente única de criterio financiero del motor (R1–R10).
 

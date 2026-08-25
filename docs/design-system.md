@@ -114,7 +114,7 @@ normal ni perderse entre los turnos.
 
 ### InterviewProgress
 Indicador de progreso de la entrevista (bloque actual de 8). Ayuda al visitante a saber cuánto
-queda; reduce abandono en una conversación de ~14 turnos. Se define su forma exacta (barra, pasos
+queda; reduce abandono en una conversación de ~15 turnos. Se define su forma exacta (barra, pasos
 numerados) al construir la UI.
 
 ### DiagnosisCard

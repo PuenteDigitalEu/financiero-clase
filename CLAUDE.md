@@ -188,15 +188,16 @@ scripts/          → scripts de verificación (cobertura de tests declarados en
   cartera). Todo cálculo numérico vive en `lib/motor/`, en código determinista y testeado —
   Claude solo conduce la conversación y redacta el diagnóstico narrativo a partir de esos números
   ya calculados. Ver la decisión técnica correspondiente en `docs/architecture.md`.
-- No implementes `app/api/chat/` contra las versiones actuales de `instrucciones-sistema.md` o
-  `instrucciones-motor.md` sin comprobar antes que ya se actualizaron para el flujo de esta
-  versión (diagnóstico mostrado directamente al visitante, persistencia en Supabase). Tal como
-  están escritas hoy, ambas prohíben explícitamente lo que este proyecto construye.
+- No implementes `app/api/chat/` sin releer `instrucciones-sistema.md` (Fases 1-2) e
+  `instrucciones-motor.md` (Fases 3-4) primero — reescritos el 2026-08-24 para el flujo de esta
+  versión (diagnóstico y plan mostrados directamente al visitante, persistencia en Supabase). Si en
+  el futuro algo de esos documentos vuelve a contradecir lo que este proyecto construye, dilo antes
+  de seguir en vez de asumir que están al día.
 - No inventes ni completes un dato financiero que la ficha marca como `pendiente`. Si falta un
   dato crítico (regla R9 de `docs/criterio/reglas-recomendacion.md`), el informe se queda en modo
   condicionado o suspendido — nunca se rellena el hueco con una estimación no declarada.
 - No le muestres al visitante una propuesta ejecutable (aportación, cartera) en modo
-  `condicionado` o `suspendido`. Es la línea roja del propio `instrucciones-motor.md` §4.
+  `condicionado` o `suspendido`. Es la línea roja del propio `instrucciones-motor.md` §4 y §8.
 
 ---
 
@@ -308,11 +309,12 @@ Si la carpeta `mejoras/` no existe, créala.
 
 ## Notas adicionales
 
-- **Primera tarea real de implementación, antes que cualquier UI:** reescribir
-  `instrucciones-sistema.md` e `instrucciones-motor.md` para el flujo de esta versión (ver
-  decisión técnica en `docs/architecture.md`), y portar los cálculos de
-  `docs/criterio/reglas-recomendacion.md` a `lib/motor/`. Sin eso no hay system prompt válido ni
-  motor determinista contra los que construir `app/api/chat/`.
+- **Estado de la implementación:** `instrucciones-sistema.md` e `instrucciones-motor.md` ya están
+  reescritos para el flujo de esta versión (2026-08-24, ver decisión técnica en
+  `docs/architecture.md`). Falta portar los cálculos de `docs/criterio/reglas-recomendacion.md` a
+  `lib/motor/` (hay una implementación de referencia verificada, ver `docs/roadmap.md`), la
+  migración inicial de Supabase, y todo lo demás de la Fase 1 del roadmap — nada de código de la
+  aplicación existe todavía.
 - Los documentos de trabajo que ya existían antes de este repo (`plantilla-entrevista.md`,
   `docs/criterio/reglas-recomendacion.md`, fichas y diagnósticos de prueba en la raíz del
   proyecto) son la fuente de verdad del negocio: no se reescriben libremente, se traducen a

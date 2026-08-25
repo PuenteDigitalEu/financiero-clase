@@ -8,9 +8,12 @@
 
 ## Fase 1 — MVP
 
-- [ ] Reescribir `instrucciones-sistema.md` e `instrucciones-motor.md` para el nuevo flujo:
-      diagnóstico mostrado al visitante en el chat, persistencia en Supabase en vez de archivos
-      markdown locales. Prerrequisito de todo lo demás (ver decisión técnica en `architecture.md`).
+- [x] Reescribir `instrucciones-sistema.md` e `instrucciones-motor.md` para el nuevo flujo:
+      diagnóstico y plan mostrados al visitante en el chat, persistencia en Supabase en vez de
+      archivos markdown locales, nueva Fase 4 de entrega del plan en lenguaje llano. Hecho
+      2026-08-24 (ver decisión técnica en `architecture.md`). De paso se añadió el bloque 0 de
+      `plantilla-entrevista.md` (nombre + email), que faltaba y sin el cual `clientes`/`M-05`
+      nunca podían funcionar.
 - [ ] Migración inicial de base de datos (`001_esquema_inicial.sql`, ver `docs/data-model.md`).
 - [ ] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
       `lib/motor/` (TypeScript determinista, con el catálogo de 17 casos borde), incluida la
@@ -18,7 +21,7 @@
       referencia (Python + su port a TypeScript) que reduce el coste de construir esto de cero;
       revisarla antes de escribir el port propio.
 - [ ] Landing pública con presentación de la asesoría y el agente — `M-01`.
-- [ ] Chat de entrevista guiada, Módulo 1 integrado con Claude — `M-02`.
+- [ ] Chat de entrevista guiada, Fases 1-2 (`instrucciones-sistema.md`) integradas con Claude — `M-02`.
 - [ ] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
       con el disclaimer reforzado — `M-03`.
 - [ ] Persistencia de cada conversación (ficha + informe) en Supabase — `M-04`.

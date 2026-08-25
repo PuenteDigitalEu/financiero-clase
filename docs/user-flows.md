@@ -36,7 +36,8 @@ condicionados / el modo de estabilización que corresponda), con el disclaimer r
 4. El agente se presenta y da el disclaimer regulatorio de apertura (obligatorio, no se salta —
    distinto del consentimiento del paso anterior: uno autoriza el tratamiento de datos, el otro
    aclara que no es asesoramiento regulado).
-5. El agente conduce la entrevista en el orden fijo de `plantilla-entrevista.md` — ingresos,
+5. El agente pide nombre y email (bloque 0 — necesario para que el asesor pueda contactar después,
+   ver `FLOW-02`) y conduce la entrevista en el orden fijo de `plantilla-entrevista.md` — ingresos,
    gastos, deudas, ahorro/inversión, colchón, objetivo, horizonte/riesgo, edad/situación vital —
    una pregunta cada vez, con repregunta única cuando la respuesta es ambigua y opción de saltar
    datos sensibles.

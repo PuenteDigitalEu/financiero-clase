@@ -62,18 +62,18 @@ de partida para la siguiente conversación con esa persona — no como sustituto
   chat.
 
 - **[M-02] Entrevista guiada por chat** — Dado un visitante que inicia el chat, cuando responde a
-  las preguntas, entonces el agente sigue el orden fijo de `plantilla-entrevista.md` (ingresos →
-  gastos → deudas → ahorro/inversión → colchón → objetivo → horizonte/riesgo → edad/situación
-  vital), una pregunta cada vez, respetando las reglas ya definidas de repregunta única, datos
-  sensibles saltables y tope de ~14 turnos.
+  las preguntas, entonces el agente sigue el orden fijo de `plantilla-entrevista.md` (presentación
+  → ingresos → gastos → deudas → ahorro/inversión → colchón → objetivo → horizonte/riesgo →
+  edad/situación vital), una pregunta cada vez, respetando las reglas ya definidas de repregunta
+  única, datos sensibles saltables y tope de ~15 turnos.
   *Negativo:* dado un visitante que se niega a dar un dato sensible, cuando lo indica, entonces el
   agente lo marca como pendiente, avisa en una frase de que el diagnóstico será menos preciso en
   ese punto, y continúa sin insistir.
 
 - **[M-03] Diagnóstico y propuesta automáticos en el propio chat** — Dado un visitante que termina
   la entrevista y confirma el resumen de sus datos, cuando el sistema genera la ficha, entonces
-  ejecuta el motor de análisis (política de inversión) sobre esa ficha y muestra en el chat, en el
-  mismo momento, el diagnóstico (situación actual, % de camino recorrido, proyección, gap) y la
+  ejecuta el motor de análisis (`docs/criterio/reglas-recomendacion.md`) sobre esa ficha y muestra
+  en el chat, en el mismo momento, el diagnóstico (situación actual, % de camino recorrido, proyección, gap) y la
   propuesta preliminar (aportación, cartera objetivo), acompañados siempre del disclaimer de que es
   orientación educativa no regulada y que el asesor la revisará después.
   *Negativo:* dado un caso con datos críticos pendientes (R9) o flujo libre ≤ 0, cuando
@@ -151,11 +151,11 @@ del sistema (llamada, reunión, propuesta formal).
 ## Requisitos no funcionales
 
 - **Cumplimiento normativo:** el disclaimer de "orientación educativa, no asesoramiento de
-  inversión regulado" debe aparecer al inicio de la conversación y de nuevo junto al
-  diagnóstico/propuesta automáticos (`M-03`), dado que ahora se entregan directamente al visitante
-  sin revisión previa del asesor — esto es una decisión consciente del usuario que se aparta del
-  diseño original de `instrucciones-sistema.md`/`instrucciones-motor.md`, y esos documentos deberán
-  actualizarse para reflejarlo antes de construir sobre ellos.
+  inversión regulado" aparece al inicio de la conversación y de nuevo junto al diagnóstico/plan
+  automáticos (`M-03`), dado que se entregan directamente al visitante sin revisión previa del
+  asesor — decisión consciente del usuario que se apartaba del diseño original de
+  `instrucciones-sistema.md`/`instrucciones-motor.md`. Ambos documentos ya se actualizaron para
+  reflejarlo (2026-08-24, ver `docs/architecture.md`).
 - **Confidencialidad de datos financieros:** los datos recogidos son sensibles (ingresos, deudas,
   patrimonio). Cifrado en tránsito y en reposo, acceso a la base de datos restringido al asesor.
 - **Protección de datos (RGPD):** el tratamiento de datos personales requiere consentimiento
@@ -181,6 +181,4 @@ del sistema (llamada, reunión, propuesta formal).
 - Cualquier flujo de pago o cobro en el sitio.
 - Generación de documentos descargables (PDF, etc.) para el visitante en esta versión — el
   resultado se muestra en el propio chat.
-- Simulación Monte Carlo de probabilidad de cumplimiento (pendiente en el motor, no se construye
-  aquí).
 - Integración con más de un asesor o marca.

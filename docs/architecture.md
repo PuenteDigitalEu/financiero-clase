@@ -202,22 +202,23 @@ sus cifras ya no pasan por revisión de un asesor antes de llegar al visitante.
 
 ### 2026-08-18 — `instrucciones-sistema.md` e `instrucciones-motor.md` deben reescribirse antes de implementar el chat
 
-**Contexto:** ambos documentos, tal como están escritos hoy, prohíben explícitamente lo que este
-proyecto construye: `instrucciones-sistema.md` dice que "ningún documento, cifra, veredicto ni
-consejo sale de este módulo hacia el cliente", e `instrucciones-motor.md` fija que su módulo "no se
-ejecuta nunca dentro de una entrevista con un cliente". Fueron escritos para un flujo con el asesor
-como intermediario obligatorio.
+**Contexto:** ambos documentos, tal como estaban escritos, prohibían explícitamente lo que este
+proyecto construye: `instrucciones-sistema.md` decía que "ningún documento, cifra, veredicto ni
+consejo sale de este módulo hacia el cliente", e `instrucciones-motor.md` fijaba que su módulo "no
+se ejecuta nunca dentro de una entrevista con un cliente". Estaban escritos para un flujo con el
+asesor como intermediario obligatorio.
 
-**Decisión:** antes de construir `app/api/chat/`, hay que revisar y actualizar ambos documentos
-para que reflejen el nuevo flujo (diagnóstico automático mostrado al visitante, con disclaimer
-reforzado) sin perder el resto de sus reglas — que siguen aplicando tal cual: orden fijo de la
-entrevista, tope de repreguntas, manejo de datos sensibles, catálogo de casos borde, límites duros
-de la política. Esto se hará como parte de la ficha de feature correspondiente, no en este
-documento.
+**Decisión:** revisar y actualizar ambos documentos para que reflejen el nuevo flujo (diagnóstico
+automático mostrado al visitante, con disclaimer reforzado) sin perder el resto de sus reglas —
+orden fijo de la entrevista, tope de repreguntas, manejo de datos sensibles, catálogo de casos
+borde, límites duros de las reglas de recomendación.
 
-**Consecuencias:** hasta que esos dos documentos no estén actualizados, no hay system prompt válido
-que darle a Claude para `app/api/chat/`. Es la primera tarea de implementación, antes de cualquier
-código de UI.
+**Consecuencias:** hecho el 2026-08-24. `instrucciones-sistema.md` cubre ahora las Fases 1-2
+(entrevista y ficha, persistidas en Supabase en vez de archivos locales) e `instrucciones-motor.md`
+las Fases 3-4 (cálculo con `lib/motor/` y entrega del plan en lenguaje llano — nueva sección §8 que
+no existía en el diseño original). El bloque 0 de `plantilla-entrevista.md` (nombre + email) se
+añadió en la misma revisión: sin él, `clientes` nunca se puede rellenar y `M-05` pierde sentido. Ya
+hay system prompt válido para `app/api/chat/`.
 
 ### 2026-08-23 — Consentimiento RGPD como paso obligatorio antes de crear la conversación
 

@@ -4,12 +4,11 @@
      El agente de codificación debe consultar este archivo antes de hacer cualquier migración. -->
 
 **Nota de traducción:** `instrucciones-sistema.md` e `instrucciones-motor.md` definen su contrato de
-datos como archivos markdown (`ficha-[nombre].md`, `informe-[nombre].md`) con líneas
-`clave: valor [estado]`. Este documento traslada ese mismo contrato a tablas de Postgres —incluida
-la etiqueta `[confirmado|estimado|pendiente]` de cada dato, que aquí es una columna `_estado`
-paralela a cada campo en vez de una anotación en la misma línea. Cuando se reescriban esos dos
-documentos (ver decisión técnica en `architecture.md`), deben apuntar a este esquema, no a archivos
-locales.
+datos con líneas `clave: valor [estado]` — el mismo formato que usaba la versión de escritorio
+(`ficha-[nombre].md`, `informe-[nombre].md`), pero desde el 2026-08-24 su destino es Supabase, no
+archivos locales. Este documento traslada ese contrato a tablas de Postgres —incluida la etiqueta
+`[confirmado|estimado|pendiente]` de cada dato, que aquí es una columna `_estado` paralela a cada
+campo en vez de una anotación en la misma línea.
 
 ---
 
@@ -60,7 +59,7 @@ Una fila por cada visitante que abre el chat, exista o no llegue a completarlo.
 | iniciada_en | timestamptz | Momento en que el visitante abrió el chat |
 | finalizada_en | timestamptz, nullable | Momento en que se cerró (completada o abandonada) |
 | estado | text — `'en_curso' \| 'completada' \| 'abandonada'` | Estado de la conversación |
-| turnos_totales | int | Número de intercambios pregunta-respuesta, para vigilar el tope de ~14 |
+| turnos_totales | int | Número de intercambios pregunta-respuesta, para vigilar el tope de ~15 |
 
 ### limites_uso
 Control de abuso: la entrevista es pública y cada mensaje cuesta dinero en la API de Claude. Sin
@@ -75,15 +74,17 @@ claro — sigue sirviendo para contar sin ser un dato personal identificable.
 | creado_en | timestamptz | — |
 
 ### fichas
-Una fila por conversación completada — equivalente a `ficha-[nombre].md` del Módulo 1. Contiene
-exactamente las claves fijas del contrato de `instrucciones-sistema.md`, salvo las deudas (tabla
-`deudas` aparte, por ser un grupo repetible).
+Una fila por conversación completada — equivalente a la ficha que cierra las Fases 1-2 de
+`instrucciones-sistema.md`. Contiene exactamente las claves fijas de ese contrato, salvo las deudas
+(tabla `deudas` aparte, por ser un grupo repetible) y el email (vive en `clientes`, no se duplica
+aquí).
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | id | uuid, PK | Identificador de la ficha |
 | conversacion_id | uuid, FK → conversaciones, único | Conversación de la que procede |
-| cliente | text | Nombre dado por el visitante |
+| nombre | text, nullable | Nombre dado por el visitante (bloque 0) |
+| nombre_estado | dato_estado | — |
 | fecha_entrevista | date | Fecha de la entrevista |
 | ingresos_netos_mensual | numeric, nullable | — |
 | ingresos_netos_mensual_estado | dato_estado | — |
@@ -123,7 +124,7 @@ exactamente las claves fijas del contrato de `instrucciones-sistema.md`, salvo l
 
 ### deudas
 Grupo repetible de la ficha (0 a N filas por ficha) — equivalente a las tripletas
-`deuda_N_tipo/importe/cuota` del Módulo 1.
+`deuda_N_tipo/importe/cuota` del contrato de `instrucciones-sistema.md`.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -141,7 +142,8 @@ Grupo repetible de la ficha (0 a N filas por ficha) — equivalente a las triple
 filas, no como una fila especial.
 
 ### informes
-Una fila por diagnóstico generado por el motor (Módulo 2) — equivalente a `informe-[nombre].md`.
+Una fila por diagnóstico generado por el motor (Fases 3-4 de `instrucciones-motor.md`) — el
+informe técnico interno de §7.
 Relación 1:1 con `fichas` en esta versión (no hay reprocesado manual; si se reejecuta el motor sobre
 la misma ficha, se versiona con una fila nueva en vez de sobrescribir, igual que el archivo
 `informe-[nombre]-AAAA-MM-DD.md` del diseño original).
