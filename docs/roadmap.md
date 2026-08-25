@@ -27,7 +27,12 @@
       recibe una `Ficha` y aplica el catálogo de 17 casos borde entero (C1–C17) para producir el
       informe final — se deja para cuando se construya junto con `app/api/chat/`, porque depende
       de cómo se parsea la ficha ahí; hacerla antes, a ciegas, se tendría que rehacer.
-- [ ] Landing pública con presentación de la asesoría y el agente — `M-01`.
+- [~] Landing pública con presentación de la asesoría y el agente — `M-01`. Construida siguiendo
+      `docs/design-system.md` (paleta, tipografía Sora/Inter, tono). CTA de entrada a `/chat`
+      (placeholder hasta `M-02`). Verificado que compila, pasa lint y el servidor de desarrollo
+      sirve ambas rutas sin errores; **sin revisión visual en navegador real** — la extensión de
+      Chrome no estaba conectada en este entorno sin supervisión. Revisar visualmente antes de
+      dar `M-01` por cerrada del todo.
 - [ ] Chat de entrevista guiada, Fases 1-2 (`instrucciones-sistema.md`) integradas con Claude — `M-02`.
 - [ ] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
       con el disclaimer reforzado — `M-03`.
