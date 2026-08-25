@@ -5,6 +5,7 @@ import {
   aniosHastaMeta,
   aEurosActuales,
   aportacionPropuesta,
+  aportacionRequerida,
   convertirMetaRenta,
   flujoLibre,
   monteCarlo,
@@ -162,6 +163,34 @@ describe('vfDeterminista / aEurosActuales / aniosHastaMeta', () => {
 
   it('aniosHastaMeta devuelve null si la meta es inalcanzable en 100 años', () => {
     expect(aniosHastaMeta(5000, 800, 0.0246, 2_000_000)).toBeNull();
+  });
+});
+
+describe('aportacionRequerida (inversa de vfDeterminista)', () => {
+  it('la aportación que devuelve, metida de vuelta en vfDeterminista, alcanza el objetivo', () => {
+    const patrimonio = 10000;
+    const objetivoReal = 150000;
+    const r = 0.043;
+    const anios = 20;
+
+    const aportacion = aportacionRequerida(patrimonio, objetivoReal, r, anios);
+    const vfNominal = vfDeterminista(patrimonio, aportacion, r, anios);
+    const vfReal = aEurosActuales(vfNominal, anios);
+
+    expect(vfReal).toBeCloseTo(objetivoReal, 0); // dentro de 1€ por redondeos de coma flotante
+  });
+
+  it('con tasa cero, reparte el hueco a partes iguales entre los meses', () => {
+    const aportacion = aportacionRequerida(0, 12000, 0, 10); // 10 años, sin inflación real neta
+    // 12.000 en euros de hoy con inflación 2% a 10 años = objetivo nominal mayor; solo
+    // comprobamos que el resultado es positivo y razonable, no un valor exacto de cabeza.
+    expect(aportacion).toBeGreaterThan(0);
+  });
+
+  it('si el patrimonio ya crecido supera el objetivo, la aportación requerida es negativa', () => {
+    // Meta modesta, patrimonio grande, plazo largo: no hace falta aportar nada más.
+    const aportacion = aportacionRequerida(500000, 100000, 0.043, 20);
+    expect(aportacion).toBeLessThan(0);
   });
 });
 

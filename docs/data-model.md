@@ -114,6 +114,8 @@ aquí).
 | riesgo_tolerancia_declarada_estado | dato_estado | — |
 | riesgo_comportamiento_real | text, nullable | "sin dato" si nunca vivió una caída real (regla de `plantilla-entrevista.md` bloque 7) |
 | riesgo_comportamiento_real_estado | dato_estado | — |
+| riesgo_perfil_derivado | text — `'conservador' \| 'moderado' \| 'dinamico'`, nullable | Clasificado por la Fase 2 (agente), no por `lib/motor/`: interpretar texto libre no es un cálculo determinista (regla de `plantilla-entrevista.md` bloque 7, R3/C6 de `reglas-recomendacion.md`) |
+| riesgo_perfil_derivado_estado | dato_estado | — |
 | edad | int, nullable | — |
 | edad_estado | dato_estado | — |
 | personas_a_cargo | int, nullable | — |
@@ -123,8 +125,8 @@ aquí).
 | created_at | timestamptz | — |
 
 ### deudas
-Grupo repetible de la ficha (0 a N filas por ficha) — equivalente a las tripletas
-`deuda_N_tipo/importe/cuota` del contrato de `instrucciones-sistema.md`.
+Grupo repetible de la ficha (0 a N filas por ficha) — equivalente a los cuartetos
+`deuda_N_tipo/importe/cuota/interes` del contrato de `instrucciones-sistema.md`.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -137,6 +139,8 @@ Grupo repetible de la ficha (0 a N filas por ficha) — equivalente a las triple
 | importe_estado | dato_estado | — |
 | cuota | numeric, nullable | — |
 | cuota_estado | dato_estado | — |
+| interes | numeric, nullable | TAE en % — decide si es "deuda cara" (R1, umbral 7-8%). `pendiente` si el cliente no supo ni el tipo de deuda para estimarlo (C8) |
+| interes_estado | dato_estado | — |
 
 `deudas_numero = 0` (caso borde C9 de `instrucciones-motor.md`) se representa como ausencia de
 filas, no como una fila especial.

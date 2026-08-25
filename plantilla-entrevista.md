@@ -67,10 +67,12 @@
 ## 3. Deudas
 
 **Pregunta:**
-> "¿Tienes alguna deuda activa ahora mismo? Hipoteca, préstamo personal, coche, tarjetas de crédito con saldo pendiente... Si es así, dime el importe pendiente y la cuota mensual de cada una."
+> "¿Tienes alguna deuda activa ahora mismo? Hipoteca, préstamo personal, coche, tarjetas de crédito con saldo pendiente... Si es así, dime de cada una el importe pendiente, la cuota mensual y, si lo sabes, el interés (TAE) — así sé si es una deuda cara o no."
 
 **Repregunta si es ambigua** (p. ej. "algo de tarjeta pero poco"):
-> "Para hacerme una idea real: ¿'poco' sería menos de 1.000€, entre 1.000 y 5.000€, o más? Y de esa deuda, ¿pagas solo el mínimo cada mes o la vas amortizando?"
+> "Para hacerme una idea real: ¿'poco' sería menos de 1.000€, entre 1.000 y 5.000€, o más? Y de esa deuda, ¿pagas solo el mínimo cada mes o la vas amortizando? Si no sabes el interés exacto, ¿dirías que es una tarjeta o crédito rápido (interés alto, normalmente), un préstamo personal (interés medio), o una hipoteca (interés bajo)?"
+
+*(Si el cliente no sabe el TAE exacto pero identifica el tipo de deuda, se guarda una estimación prudente por tipo — tarjeta/crédito rápido `[estimado]` alto (>8%), préstamo personal `[estimado]` medio, hipoteca `[estimado]` bajo (<4%) — declarando el supuesto. Si no sabe ni eso, el interés de esa deuda queda `pendiente`; ver C8 de `instrucciones-motor.md`.)*
 
 **Si es reacio — única variable donde se insiste una vez más en vez de solo repreguntar:**
 > "Te entiendo, y no necesito el detalle si prefieres no darlo. Solo te explico por qué insisto: si hay una deuda con interés alto sin declarar, el diagnóstico podría recomendarte invertir cuando en realidad te convendría más cancelar esa deuda antes — es el dato que más puede cambiar la conclusión. ¿Me confirmas al menos si tienes alguna deuda con un interés por encima del 8%, sí o no?"
@@ -137,7 +139,7 @@
 **Pregunta de seguimiento (siempre, tras la anterior):**
 > "Una última cosa sobre esto: ¿has vivido alguna vez una caída real de una inversión que tuvieras — bolsa, fondos, cripto, lo que sea? Si es así, ¿qué hiciste en ese momento: aguantaste, vendiste, o aprovechaste para meter más?"
 
-*(Si el cliente describe una reacción real a una caída de mercado, ese dato se guarda en `riesgo_comportamiento_real` y prevalece sobre la respuesta hipotética anterior a la hora de asignar el perfil de riesgo — ver `docs/criterio/reglas-recomendacion.md`. Si nunca ha vivido una caída real, se guarda "sin dato" y se usa la tolerancia declarada tal cual.)*
+*(Se guarda en `riesgo_comportamiento_real` lo que el cliente cuenta, tal cual — "sin dato" si nunca ha vivido una caída real. Con eso y con `riesgo_tolerancia_declarada`, clasifica también `riesgo_perfil_derivado` en `conservador`, `moderado` o `dinamico`: si hubo una caída real, lo que HIZO manda sobre lo que dice que haría (aguantó o compró más → al menos moderado, aunque declarara tolerancia baja; vendió → conservador, aunque declarara tolerancia alta); si nunca vivió una caída real, deriva el perfil directamente de la tolerancia declarada (baja→conservador, media→moderado, alta→dinamico). Esta clasificación la haces tú aquí, en la conversación — `lib/motor/` la usa tal cual, nunca la calcula por su cuenta a partir del texto libre. Ver R3/C6 de `docs/criterio/reglas-recomendacion.md` / `instrucciones-motor.md`.)*
 
 ---
 

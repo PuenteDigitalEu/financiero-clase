@@ -149,6 +149,25 @@ export function vfDeterminista(
   );
 }
 
+/**
+ * Inversa de `vfDeterminista`: la aportación mensual (nominal) que hace falta para llegar a
+ * `objetivoReal` (euros actuales) en `anios`, partiendo de `patrimonio`. Fórmula cerrada — no hay
+ * que buscar por aproximaciones sucesivas.
+ */
+export function aportacionRequerida(
+  patrimonio: number,
+  objetivoReal: number,
+  rAnual: number,
+  anios: number,
+): number {
+  const objetivoNominal = objetivoReal * (1 + INFLACION) ** anios;
+  const rMensual = (1 + rAnual) ** (1 / 12) - 1;
+  const meses = Math.round(anios * 12);
+  const patrimonioCrecido = patrimonio * (1 + rMensual) ** meses;
+  if (rMensual === 0) return (objetivoNominal - patrimonioCrecido) / meses;
+  return ((objetivoNominal - patrimonioCrecido) * rMensual) / ((1 + rMensual) ** meses - 1);
+}
+
 /** R5 · Resultados en euros actuales (deflactar con la inflación de referencia). */
 export function aEurosActuales(valorNominal: number, anios: number): number {
   return valorNominal / (1 + INFLACION) ** anios;

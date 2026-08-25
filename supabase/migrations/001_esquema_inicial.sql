@@ -105,6 +105,10 @@ create table fichas (
   riesgo_tolerancia_declarada_estado dato_estado,
   riesgo_comportamiento_real         text,
   riesgo_comportamiento_real_estado  dato_estado,
+  -- Clasificado por la Fase 2 (agente): interpretar texto libre no es un calculo determinista.
+  riesgo_perfil_derivado        text
+    check (riesgo_perfil_derivado in ('conservador', 'moderado', 'dinamico')),
+  riesgo_perfil_derivado_estado dato_estado,
 
   edad             int,
   edad_estado      dato_estado,
@@ -128,7 +132,10 @@ create table deudas (
   importe        numeric,
   importe_estado dato_estado,
   cuota          numeric,
-  cuota_estado   dato_estado
+  cuota_estado   dato_estado,
+  -- TAE en %. Decide si es "deuda cara" (R1, umbral 7-8%); pendiente si no se pudo ni estimar (C8).
+  interes        numeric,
+  interes_estado dato_estado
 );
 create index deudas_ficha_id_idx on deudas (ficha_id);
 

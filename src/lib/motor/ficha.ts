@@ -7,6 +7,8 @@
  * coincidan exactamente.
  */
 
+import type { PerfilRiesgo } from './supuestos';
+
 /** Calidad del dato (R9). Decide el modo del informe. */
 export type Etiqueta = 'confirmado' | 'estimado' | 'pendiente';
 
@@ -20,10 +22,16 @@ export type EstabilidadIngresos = 'estable' | 'variable';
 export type ToleranciaRiesgo = 'baja' | 'media' | 'alta';
 export type DeudaInteresAltoDeclarado = 'si' | 'no' | 'no_facilitado';
 
+/**
+ * Cada campo lleva su propia etiqueta (igual que `deudas` en `data-model.md`): el interés puede
+ * quedar pendiente (C8) aunque el importe y la cuota estén confirmados.
+ */
 export interface Deuda {
-  tipo: string | null;
-  importe: number | null;
-  cuota: number | null;
+  tipo: Dato<string>;
+  importe: Dato<number>;
+  cuota: Dato<number>;
+  /** TAE en %. R1: > 7-8 % es deuda cara, prioridad absoluta sobre invertir. */
+  interes: Dato<number>;
 }
 
 export interface Ficha {
@@ -58,6 +66,11 @@ export interface Ficha {
   riesgoToleranciaDeclarada: Dato<ToleranciaRiesgo>;
   /** "sin dato" si nunca vivió una caída real — prevalece sobre la tolerancia declarada (R3/C6). */
   riesgoComportamientoReal: Dato<string>;
+  /**
+   * Clasificado por la Fase 2 (agente) a partir de las dos anteriores — `lib/motor/` lo usa tal
+   * cual, nunca interpreta texto libre por su cuenta (ver instrucciones-sistema.md).
+   */
+  riesgoPerfilDerivado: Dato<PerfilRiesgo>;
 
   edad: Dato<number>;
   personasACargo: Dato<number>;
@@ -73,6 +86,10 @@ export type ModoInforme = 'completo' | 'condicionado' | 'suspendido';
 /**
  * R9 · Variables críticas. Si alguna está `pendiente` (y no es el caso especial de deudas, que
  * suspende directamente), el informe no puede emitir propuesta ejecutable.
+ *
+ * `riesgoPerfilDerivado` NO está aquí a propósito, aunque R9 la nombra entre las críticas: tiene
+ * su propio colchón (C5 de instrucciones-motor.md — perfil no calculable → conservador por
+ * defecto), así que su ausencia no baja el modo del informe entero.
  */
 export const VARIABLES_CRITICAS = [
   'ingresosNetosMensual',
@@ -82,7 +99,6 @@ export const VARIABLES_CRITICAS = [
   'patrimonioInvertido',
   'objetivoImporte',
   'objetivoPlazoAnios',
-  'riesgoToleranciaDeclarada',
 ] as const satisfies ReadonlyArray<keyof Ficha>;
 
 /**
@@ -112,22 +128,28 @@ export function determinarModo(ficha: Ficha): { modo: ModoInforme; faltantes: st
  *
  * Heurística de texto simple y deliberadamente conservadora: ante la duda, `mixta_ambigua` — que
  * es justo el modo que obliga a no proyectar nada sin dejarlo dicho (§3 de instrucciones-motor.md).
+ *
+ * La clasificación depende solo del texto, nunca de si `objetivoImporte` tiene valor: para
+ * `renta_cartera`, ese mismo campo se reutiliza más adelante como la renta mensual a convertir
+ * (R6) — exigir que estuviera vacío para clasificar como renta habría hecho imposible convertirla
+ * después.
  */
 export function clasificarMeta(ficha: Ficha): TipoMeta {
+  const proposito = (ficha.objetivoProposito.valor ?? '').toLowerCase();
+  const laboral = (ficha.situacionLaboral.valor ?? '').toLowerCase();
+  const textoNegocio = /negocio|autónomo|autonomo|empresa propia|mi empresa|facturación|facturacion/;
+  const textoRentaMensual = /renta|vivir de|al mes|mensual/;
+
+  const esDeNegocio = textoNegocio.test(proposito) || textoNegocio.test(laboral);
+  const esRentaMensual = textoRentaMensual.test(proposito);
+
+  if (esDeNegocio) return 'renta_negocio';
+  if (esRentaMensual) return 'renta_cartera';
+
   const objetivoImporteValido =
     ficha.objetivoImporte.etiqueta !== 'pendiente' && ficha.objetivoImporte.valor !== null;
   const plazoValido =
     ficha.objetivoPlazoAnios.etiqueta !== 'pendiente' && ficha.objetivoPlazoAnios.valor !== null;
-
-  const proposito = (ficha.objetivoProposito.valor ?? '').toLowerCase();
-  const laboral = (ficha.situacionLaboral.valor ?? '').toLowerCase();
-  const textoNegocio = /negocio|autónomo|autonomo|empresa propia|mi empresa|facturación|facturacion/;
-
-  const esRentaMensual = /renta|vivir de|al mes|mensual/.test(proposito) && !objetivoImporteValido;
-  const esDeNegocio = textoNegocio.test(proposito) || textoNegocio.test(laboral);
-
-  if (esDeNegocio) return 'renta_negocio';
-  if (esRentaMensual) return 'renta_cartera';
   if (objetivoImporteValido && plazoValido) return 'patrimonio';
   return 'mixta_ambigua';
 }

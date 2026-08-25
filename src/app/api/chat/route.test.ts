@@ -114,4 +114,76 @@ describe("POST /api/chat", () => {
     const data = await res.json();
     expect(data.error).toBeTruthy();
   });
+
+  describe("cuando el mensaje del agente trae la ficha de cierre", () => {
+    const FICHA_MINIMA = `
+nombre: Silvia [confirmado]
+fecha_entrevista: 2026-08-25
+
+ingresos_netos_mensual: 2800 [confirmado]
+ingresos_estabilidad: estable [confirmado]
+gastos_fijos_mensual: 1600 [confirmado]
+
+deudas_numero: 1
+deuda_1_tipo: hipoteca [confirmado]
+deuda_1_importe: 150000 [confirmado]
+deuda_1_cuota: 620 [confirmado]
+deuda_1_interes: 1.9 [confirmado]
+deudas_interes_alto_declarado: no [confirmado]
+
+patrimonio_liquido: 12000 [confirmado]
+patrimonio_invertido: 10000 [confirmado]
+patrimonio_distribucion: todo en un fondo indexado [confirmado]
+aportacion_mensual_actual: 150 [confirmado]
+
+colchon_meses: 5 [confirmado]
+
+objetivo_proposito: bajar el ritmo a los 60 [confirmado]
+objetivo_importe: 150000 [confirmado]
+objetivo_plazo_anios: 20 [confirmado]
+
+riesgo_tolerancia_declarada: media [confirmado]
+riesgo_comportamiento_real: aguantó la caída del covid sin vender [confirmado]
+riesgo_perfil_derivado: moderado [confirmado]
+
+edad: 40 [confirmado]
+personas_a_cargo: 0 [confirmado]
+situacion_laboral: diseñadora gráfica en plantilla [confirmado]
+`;
+
+    it("no enseña el volcado en crudo: calcula el informe y devuelve el plan redactado", async () => {
+      mockCreate
+        .mockResolvedValueOnce({ content: [{ type: "text", text: FICHA_MINIMA }] })
+        .mockResolvedValueOnce({ content: [{ type: "text", text: "## Tu meta\n..." }] });
+
+      const res = await POST(req({ messages: [{ role: "user", content: "ya está" }] }));
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.message.content).toBe("## Tu meta\n...");
+      expect(data.message.content).not.toContain("ingresos_netos_mensual");
+      expect(mockCreate).toHaveBeenCalledTimes(2);
+    });
+
+    it("la segunda llamada (redacción del plan) usa un system prompt distinto al de la entrevista", async () => {
+      mockCreate
+        .mockResolvedValueOnce({ content: [{ type: "text", text: FICHA_MINIMA }] })
+        .mockResolvedValueOnce({ content: [{ type: "text", text: "plan" }] });
+
+      await POST(req({ messages: [{ role: "user", content: "ya está" }] }));
+
+      const segundaLlamada = mockCreate.mock.calls[1][0];
+      expect(segundaLlamada.system).not.toBe("system prompt de prueba");
+      expect(segundaLlamada.system).toContain("Entrega del plan al visitante");
+    });
+
+    it("si falla la llamada de redacción del plan, responde 502", async () => {
+      mockCreate
+        .mockResolvedValueOnce({ content: [{ type: "text", text: FICHA_MINIMA }] })
+        .mockRejectedValueOnce(new Error("boom"));
+
+      const res = await POST(req({ messages: [{ role: "user", content: "ya está" }] }));
+      expect(res.status).toBe(502);
+    });
+  });
 });

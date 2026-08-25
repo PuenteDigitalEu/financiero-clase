@@ -281,3 +281,37 @@ directamente (`join(process.cwd(), "instrucciones-sistema.md")`), sin pasar por 
 parámetro. El trazador sí puede seguir una ruta literal. Si en el futuro se necesita leer más
 documentos de la raíz desde código de servidor, mantener el mismo patrón — una llamada literal por
 archivo, no una función genérica con el nombre como argumento.
+
+### 2026-08-25 — El razonamiento extendido de Sonnet 5 se come el presupuesto de `max_tokens`
+
+**Síntoma:** al llamar a `claude.messages.create()` sin tocar el parámetro `thinking`, la
+respuesta de la Fase 4 (redacción del plan, `lib/claude/plan.ts`) salía vacía o cortada a mitad de
+frase, incluso subiendo `max_tokens` de 2048 a 4096.
+
+**Causa:** el modelo usa razonamiento extendido ("thinking") por defecto, y los tokens de
+pensamiento cuentan contra el mismo `max_tokens` que la respuesta visible — con un prompt que
+incluye un informe entero en JSON, el modelo podía gastar la mayoría (o la totalidad) del
+presupuesto pensando, sin dejar tokens para el texto de las 8 secciones del plan.
+
+**Solución / mitigación:** pasar `thinking: { type: "disabled" }` explícitamente en toda llamada
+donde el análisis ya lo hizo `lib/motor/` de forma determinista — la llamada solo tiene que
+traducir a lenguaje llano, no razonar de más. Aplicado tanto en `lib/claude/plan.ts` (Fase 4) como
+en `app/api/chat/route.ts` (Fase 1-2, por el mismo riesgo con turnos más largos). Si en el futuro
+una llamada a Claude sí necesita razonar de verdad (no solo traducir), subir `max_tokens` con
+margen explícito para el `budget_tokens` del thinking, no confiar en el valor por defecto.
+
+### 2026-08-25 — vitest no resuelve el alias `@/*` sin configuración propia
+
+**Síntoma:** al añadir un import `@/lib/...` sin mockear en un test (`@/lib/claude/plan`,
+`@/lib/motor/informe`), vitest fallaba con "Cannot find package '@/lib/...'" pese a que `tsc
+--noEmit` y `pnpm build` compilaban sin problema.
+
+**Causa:** el alias `@/* → ./src/*` está declarado en `tsconfig.json` → `paths`, pero eso solo lo
+lee el bundler de Next.js (webpack/Turbopack). Vitest corre por su cuenta con Vite y no consulta
+`tsconfig.json` para resolver imports a menos que se le diga explícitamente. El problema estaba
+oculto hasta ahora porque todo import `@/...` en los tests existentes pasaba por `vi.mock(...)`,
+que intercepta el especificador antes de que haga falta resolverlo de verdad.
+
+**Solución / mitigación:** `vitest.config.mts` en la raíz, con `resolve.alias` apuntando `@` a
+`./src` (mismo mapeo que tsconfig). Extensión `.mts` (no `.ts`) para que el cargador de Vite lo
+trate como ESM sin ambigüedad — con `.ts` avisaba de una futura ruptura por CommonJS/ESM mixto.

@@ -40,10 +40,13 @@ calcular ninguno él mismo (ver decisión técnica en `docs/architecture.md`).
 
 - Claves esperadas: las del contrato de la Fase 2 (ver `instrucciones-sistema.md`) —
   `ingresos_netos_mensual`, `ingresos_estabilidad`, `gastos_fijos_mensual`, `deudas_numero` +
-  `deuda_N_tipo/importe/cuota`, `deudas_interes_alto_declarado`, `patrimonio_liquido`,
+  `deuda_N_tipo/importe/cuota/interes`, `deudas_interes_alto_declarado`, `patrimonio_liquido`,
   `patrimonio_invertido`, `patrimonio_distribucion`, `aportacion_mensual_actual`, `colchon_meses`,
   `objetivo_proposito/importe/plazo_anios`, `riesgo_tolerancia_declarada`,
-  `riesgo_comportamiento_real`, `edad`, `personas_a_cargo`, `situacion_laboral`.
+  `riesgo_comportamiento_real`, `riesgo_perfil_derivado`, `edad`, `personas_a_cargo`,
+  `situacion_laboral`.
+- `riesgo_perfil_derivado` llega ya clasificado por la Fase 2 (conservador/moderado/dinámico) — el
+  motor lo usa tal cual, nunca interpreta `riesgo_comportamiento_real` por su cuenta (ver C6).
 - Cada valor lleva etiqueta `[confirmado|estimado|pendiente]`. Valor sin etiqueta → tratar como
   `estimado` y señalarlo como anomalía en la sección de calidad del dato.
 - Rangos dentro de un valor (p. ej. «300-400 €») → usar el extremo prudente según la dirección de
@@ -68,11 +71,15 @@ calcular ninguno él mismo (ver decisión técnica en `docs/architecture.md`).
 
 ## 4 · Modos del informe según calidad del dato
 
-- **Completo:** las 6 variables críticas de R9 (ingresos y gastos esenciales, deudas, liquidez y
-  colchón, patrimonio invertido, objetivo y plazo, capacidad y tolerancia al riesgo) presentes,
-  aunque alguna sea `estimado` → diagnóstico + propuesta preliminar ejecutable + probabilidad R10.
-- **Condicionado:** falta alguna crítica → diagnóstico con lo disponible + solo escenarios
-  condicionados («si X fuera..., entonces...»). Sin propuesta ejecutable, sin probabilidad R10.
+- **Completo:** ingresos y gastos esenciales, deudas, liquidez y colchón, patrimonio invertido,
+  objetivo y plazo presentes, aunque alguna sea `estimado` → diagnóstico + propuesta preliminar
+  ejecutable + probabilidad R10. La tolerancia al riesgo (`riesgo_perfil_derivado`) **no** está en
+  esta lista pese a que R9 la nombra entre las críticas: tiene su propio colchón (C5 — perfil no
+  calculable → conservador por defecto, indicándolo), así que su ausencia no baja el modo, se
+  resuelve con ese valor por defecto.
+- **Condicionado:** falta alguna de las críticas de arriba → diagnóstico con lo disponible + solo
+  escenarios condicionados («si X fuera..., entonces...»). Sin propuesta ejecutable, sin
+  probabilidad R10.
 - **Suspendido:** deudas marcadas «no facilitado» por negativa explícita del cliente → diagnóstico
   descriptivo y recomendación expresamente suspendida, explicando por qué.
 
@@ -108,9 +115,9 @@ Todo cálculo numérico se ejecuta con código, nunca a mano:
 | C3 | Puntos de renta variable retirados por la regla del plazo | Reasignar a renta fija de corta duración/monetarios. `[estimado — validar]` |
 | C4 | `colchon_meses` dentro del rango objetivo pero no en su tope superior | Se considera completo al alcanzar el límite inferior del rango. |
 | C5 | Perfil no calculable (tolerancia, horizonte o edad «no facilitado») | Conservador por defecto, indicándolo. |
-| C6 | `riesgo_tolerancia_declarada` vs. `riesgo_comportamiento_real` disponibles a la vez | El motor usa el comportamiento real si existe; no hay caso especial si no hay contradicción. |
+| C6 | `riesgo_tolerancia_declarada` vs. `riesgo_comportamiento_real` disponibles a la vez | Resuelto en la Fase 2, no aquí: `riesgo_perfil_derivado` ya viene clasificado dando prioridad al comportamiento real. Si `riesgo_perfil_derivado` está `pendiente`, cae en C5. |
 | C7 | Cliente perfil no dinámico con interés en cripto | 0 % + señal para la reunión. Hoy la entrevista no pregunta interés en cripto explícitamente — pendiente de añadir si se vuelve relevante. |
-| C8 | Deuda sin saldo ni plazo | Cuota e interés al flujo y a la priorización; amortización, patrimonio neto y fecha de liberación → pendientes. |
+| C8 | Deuda con `interes` (TAE) en `pendiente` | No se puede clasificar como cara/barata (R1) por TAE — se prioriza por la cuota dentro del flujo igualmente, pero la priorización relativa frente a otras deudas queda `pendiente para la reunión`, no se asume ni cara ni barata. |
 | C9 | `deudas_numero` = 0 | Los pasos de deuda del orden de prioridad se dan por cumplidos, diciéndolo explícitamente. |
 | C10 | Flujo libre ≤ 0 | Modo de estabilización íntegro, sin cartera ejecutable. |
 | C11 | `aportacion_mensual_actual` = 0 con flujo libre > 0 | Hecho descriptivo, sin juicio; la propuesta parte de R2 con normalidad. |

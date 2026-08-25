@@ -10,7 +10,17 @@ function fichaCompleta(): Ficha {
     ingresosNetosMensual: { valor: 2800, etiqueta: 'confirmado' },
     ingresosEstabilidad: { valor: 'estable', etiqueta: 'confirmado' },
     gastosFijosMensual: { valor: 2000, etiqueta: 'confirmado' },
-    deudas: { valor: [{ tipo: 'hipoteca', importe: null, cuota: 620 }], etiqueta: 'confirmado' },
+    deudas: {
+      valor: [
+        {
+          tipo: { valor: 'hipoteca', etiqueta: 'confirmado' },
+          importe: { valor: null, etiqueta: 'pendiente' },
+          cuota: { valor: 620, etiqueta: 'confirmado' },
+          interes: { valor: 1.9, etiqueta: 'confirmado' },
+        },
+      ],
+      etiqueta: 'confirmado',
+    },
     deudasInteresAltoDeclarado: { valor: null, etiqueta: 'pendiente' },
     patrimonioLiquido: { valor: 12000, etiqueta: 'confirmado' },
     patrimonioInvertido: { valor: 10000, etiqueta: 'confirmado' },
@@ -22,6 +32,7 @@ function fichaCompleta(): Ficha {
     objetivoPlazoAnios: { valor: 20, etiqueta: 'confirmado' },
     riesgoToleranciaDeclarada: { valor: 'media', etiqueta: 'confirmado' },
     riesgoComportamientoReal: { valor: 'aguantó la caída del covid sin vender', etiqueta: 'confirmado' },
+    riesgoPerfilDerivado: { valor: 'moderado', etiqueta: 'confirmado' },
     edad: { valor: 40, etiqueta: 'confirmado' },
     personasACargo: { valor: 0, etiqueta: 'confirmado' },
     situacionLaboral: { valor: 'diseñadora gráfica en plantilla', etiqueta: 'confirmado' },

@@ -74,10 +74,12 @@ deudas_numero: [n]
 deuda_1_tipo: [texto] [estado]
 deuda_1_importe: [valor] [estado]
 deuda_1_cuota: [valor] [estado]
+deuda_1_interes: [valor — TAE en %] [estado]
 deuda_2_tipo: [texto] [estado]
 deuda_2_importe: [valor] [estado]
 deuda_2_cuota: [valor] [estado]
-[... una tripleta tipo/importe/cuota por cada deuda declarada]
+deuda_2_interes: [valor] [estado]
+[... un cuarteto tipo/importe/cuota/interes por cada deuda declarada]
 deudas_interes_alto_declarado: [si|no|no_facilitado] [estado]
 
 patrimonio_liquido: [valor] [estado]
@@ -93,6 +95,7 @@ objetivo_plazo_anios: [valor] [estado]
 
 riesgo_tolerancia_declarada: [baja|media|alta] [estado]
 riesgo_comportamiento_real: [texto — cómo reaccionó ante una caída real, si la hubo, o "sin dato"] [estado]
+riesgo_perfil_derivado: [conservador|moderado|dinamico] [estado]
 
 edad: [valor] [estado]
 personas_a_cargo: [valor] [estado]
@@ -108,6 +111,19 @@ conversación y la ficha se persisten igual y el visitante ve su plan en el chat
 mismo comportamiento que el resto de campos pendientes—, pero `conversaciones.cliente_id` queda
 `null` y no hay forma de que el asesor retome el caso. Dilo tal cual si el cliente pregunta qué
 implica no dar el email.
+
+**`riesgo_perfil_derivado` lo clasificas tú, no el motor:** `lib/motor/` es código puro, sin
+interpretación de texto libre — no puede leer `riesgo_comportamiento_real` y decidir por su cuenta
+si eso implica "moderado" o "dinámico". Esa clasificación (bloque 7 de la plantilla: el
+comportamiento real prevalece sobre la tolerancia declarada cuando hay una caída real vivida) la
+haces tú, aquí, con el contexto completo de la conversación. El motor se limita a leer el valor ya
+puesto en esta clave.
+
+**`deuda_N_interes` (TAE) decide si una deuda es "cara" (R1):** sin este dato, el motor no puede
+aplicar la prioridad de pagar antes las deudas caras. Si el cliente no sabe el TAE exacto pero
+identifica el tipo (tarjeta/crédito rápido, préstamo personal, hipoteca), usa la estimación
+prudente por tipo de la plantilla (bloque 3) y márcala `[estimado]`. Solo si no sabe ni el tipo,
+esa deuda concreta queda con `deuda_N_interes: no_facilitado [pendiente]`.
 
 ## Qué no hace este módulo (Fases 1-2)
 

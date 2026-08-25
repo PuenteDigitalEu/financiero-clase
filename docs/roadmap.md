@@ -17,16 +17,18 @@
 - [x] Migración inicial de base de datos escrita y verificada localmente
       (`supabase/migrations/001_esquema_inicial.sql`, ver `docs/data-model.md`). Falta aplicarla
       contra el Supabase real — requiere credenciales que no están disponibles en este entorno.
-- [~] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
-      `lib/motor/` (TypeScript determinista) — soporta `M-03` y `M-07`. **Hecho:** las funciones
-      puras (R1–R10: flujo libre, aportación propuesta, cartera ajustada por plazo, rentabilidad y
-      volatilidad, proyección determinista, conversión de meta de renta, Monte Carlo con semilla
-      fija) en `src/lib/motor/{supuestos,numerico,aleatorio,calculos}.ts`, más los tipos de la
-      ficha y `determinarModo`/`clasificarMeta` en `ficha.ts` — 41 tests, todos verificados
-      ejecutando de verdad (`pnpm test`), no solo leídos. **Falta:** la orquestación completa que
-      recibe una `Ficha` y aplica el catálogo de 17 casos borde entero (C1–C17) para producir el
-      informe final — se deja para cuando se construya junto con `app/api/chat/`, porque depende
-      de cómo se parsea la ficha ahí; hacerla antes, a ciegas, se tendría que rehacer.
+- [x] Portar la lógica de cálculo de `instrucciones-motor.md` + `docs/criterio/reglas-recomendacion.md` a
+      `lib/motor/` (TypeScript determinista) — soporta `M-03` y `M-07`. Funciones puras (R1–R10:
+      flujo libre, aportación propuesta, cartera ajustada por plazo, rentabilidad y volatilidad,
+      proyección determinista, aportación requerida (inversa), conversión de meta de renta, Monte
+      Carlo con semilla fija) en `src/lib/motor/{supuestos,numerico,aleatorio,calculos}.ts`; parseo
+      del texto de la ficha a `Ficha` tolerante a anomalías (`parseo.ts`, C16); y el orquestador
+      `calcularInforme()` (`informe.ts`) que aplica el catálogo de casos borde (C1–C17: TAE de
+      deuda pendiente, transición de patrimonio, perfil de riesgo no calculable con su fallback
+      conservador, deudas_numero=0, R4 con sus dos escenarios de inviabilidad, R6 con meta de renta
+      de cartera vs. de negocio, R8/R9) y aplica la línea roja de que ninguna propuesta ejecutable
+      sale fuera de modo `completo` con flujo libre positivo — 87 tests, todos verificados
+      ejecutando de verdad (`pnpm test`).
 - [~] Landing pública con presentación de la asesoría y el agente — `M-01`. Construida siguiendo
       `docs/design-system.md` (paleta, tipografía Sora/Inter, tono). CTA de entrada a `/chat`
       (placeholder hasta `M-02`). Verificado que compila, pasa lint y el servidor de desarrollo
@@ -44,8 +46,25 @@
       usuario no tiene — no es un problema técnico, no se puede resolver aquí). Pendiente el
       consentimiento (`M-06`) antes de la pantalla de "Empezar" y el límite de uso — el código ya
       deja sitio para los dos, sin implementarlos.
-- [ ] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
-      con el disclaimer reforzado — `M-03`.
+- [x] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
+      con el disclaimer reforzado — `M-03`. `app/api/chat/` detecta la ficha de cierre
+      (`contieneFicha`), la parsea, calcula el informe con `calcularInforme()` y llama a Claude una
+      segunda vez (`lib/claude/plan.ts`) solo para traducir esas cifras ya calculadas a la
+      estructura fija de §8 — nunca para recalcular nada. **Verificado en vivo** el 2026-08-25 con
+      `ANTHROPIC_API_KEY` real: las 8 secciones salen completas y con el gating correcto (R4 y R10
+      solo aparecieron porque el caso de prueba los disparaba), y cada cifra citada en el plan
+      coincide exactamente con la que calculó el motor — sin alucinaciones. De paso, dos fallos
+      reales encontrados y corregidos en esta verificación: (1) el razonamiento extendido de
+      Sonnet 5 consumía el presupuesto de `max_tokens` y podía dejar la respuesta vacía o cortada a
+      mitad — se desactiva explícitamente (`thinking: { type: "disabled" }`) en las dos llamadas;
+      (2) el modelo envolvía el plan en una valla ```markdown pese a que se le pedía no hacerlo — se
+      corrigió el prompt y se añadió un desenvolvido defensivo. También se creó `vitest.config.mts`
+      (faltaba la resolución del alias `@/*` para vitest, que hasta ahora solo hacía falta porque
+      todo lo que lo usaba estaba mockeado) y se añadió `MarkdownLite` para que `ChatBubble`
+      renderice el plan como el markdown que es, no como texto plano con los `#`/`**` literales
+      (ver `docs/data-model.md` → `planes.markdown`). **Sin revisión visual en navegador** — mismo
+      bloqueo que M-01/M-02. Persistencia en Supabase (`informes`/`planes`) queda para `M-04`, sin
+      la cual esta ruta sigue sin estado en servidor a propósito (igual que `M-02`).
 - [ ] Persistencia de cada conversación (ficha + informe) en Supabase — `M-04`.
 - [ ] Aviso automático por email al asesor al completarse una conversación — `M-05`.
 - [ ] Consentimiento de tratamiento de datos antes de crear la conversación — `M-06`. Bloqueante:

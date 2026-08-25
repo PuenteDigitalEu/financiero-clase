@@ -2,7 +2,10 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 
 import { clienteClaude, MODELO_ENTREVISTA } from "@/lib/claude/client";
+import { generarPlan } from "@/lib/claude/plan";
 import { cargarSystemPromptEntrevista } from "@/lib/claude/system-prompt";
+import { calcularInforme } from "@/lib/motor/informe";
+import { contieneFicha, parsearFicha } from "@/lib/motor/parseo";
 
 // fs.readFileSync (en system-prompt.ts) necesita el runtime de Node, no Edge.
 export const runtime = "nodejs";
@@ -61,6 +64,10 @@ export async function POST(request: Request) {
     const respuesta = await claude.messages.create({
       model: MODELO_ENTREVISTA,
       max_tokens: 1024,
+      // Sin razonamiento extendido: conducir un turno de entrevista no lo necesita, y consume el
+      // mismo presupuesto de max_tokens que la respuesta visible (ver la misma nota en
+      // lib/claude/plan.ts, donde este límite sí llegó a vaciar la respuesta real).
+      thinking: { type: "disabled" },
       system: cargarSystemPromptEntrevista(),
       messages: mensajes,
     });
@@ -69,6 +76,21 @@ export async function POST(request: Request) {
       .filter((bloque): bloque is Anthropic.TextBlock => bloque.type === "text")
       .map((bloque) => bloque.text)
       .join("\n");
+
+    // Fase 2 → Fase 3-4: cuando el mensaje del agente trae la ficha de cierre, no se le enseña el
+    // volcado en crudo al visitante — se calcula el informe (determinista, lib/motor/) y se
+    // sustituye por el plan ya redactado (§8 de instrucciones-motor.md).
+    if (contieneFicha(texto)) {
+      const { ficha, anomalias } = parsearFicha(texto);
+      if (anomalias.length > 0) {
+        console.warn("Anomalías al parsear la ficha en /api/chat:", anomalias);
+      }
+
+      const informe = calcularInforme(ficha);
+      const plan = await generarPlan(ficha, informe);
+
+      return NextResponse.json({ message: { role: "assistant", content: plan } });
+    }
 
     return NextResponse.json({ message: { role: "assistant", content: texto } });
   } catch (error) {
