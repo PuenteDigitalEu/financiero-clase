@@ -33,14 +33,17 @@
       sirve ambas rutas sin errores; **sin revisión visual en navegador real** — la extensión de
       Chrome no estaba conectada en este entorno sin supervisión. Revisar visualmente antes de
       dar `M-01` por cerrada del todo.
-- [~] Chat de entrevista guiada, Fases 1-2 (`instrucciones-sistema.md`) integradas con Claude —
+- [x] Chat de entrevista guiada, Fases 1-2 (`instrucciones-sistema.md`) integradas con Claude —
       `M-02`. `app/api/chat/` (sin estado en servidor: el cliente manda el historial completo en
       cada turno) + UI (`ChatBubble`, `DisclosureBanner`, `ChatWindow`). 10 tests con el cliente de
-      Claude mockeado (validación, tope de turnos, formato de respuesta, manejo de error 502) —
-      todos pasan de verdad. **Sin verificar en vivo:** necesita `ANTHROPIC_API_KEY` real, que
-      sigue vacía en `.env.local`; tampoco se ha podido ver en un navegador real (extensión de
-      Chrome sin conectar). Pendiente además el consentimiento (`M-06`) antes de la pantalla de
-      "Empezar" y el límite de uso — el código ya deja sitio para los dos, sin implementarlos.
+      Claude mockeado, más **verificación en vivo real** el 2026-08-25 con `ANTHROPIC_API_KEY` de
+      verdad: la apertura sale con el disclaimer completo, pasa al bloque 0 (nombre + email) y, al
+      recibirlos, avanza correctamente al bloque 1 (ingresos) recordando el nombre dado — orden y
+      memoria de la conversación confirmados con Claude de verdad, no solo con el mock. Sin
+      revisión visual en navegador (Claude in Chrome requiere un plan que la cuenta de este
+      usuario no tiene — no es un problema técnico, no se puede resolver aquí). Pendiente el
+      consentimiento (`M-06`) antes de la pantalla de "Empezar" y el límite de uso — el código ya
+      deja sitio para los dos, sin implementarlos.
 - [ ] Diagnóstico y propuesta automáticos mostrados en el propio chat al cerrar la entrevista,
       con el disclaimer reforzado — `M-03`.
 - [ ] Persistencia de cada conversación (ficha + informe) en Supabase — `M-04`.
