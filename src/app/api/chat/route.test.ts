@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockCreate = vi.fn();
 const mockValidarToken = vi.fn();
 const mockIncrementarTurno = vi.fn();
 const mockPersistirCierre = vi.fn();
+const mockRegistrarNotificacionAsesor = vi.fn();
+const mockEnviarAvisoAsesor = vi.fn();
 
 // Mockeado a propósito: esto verifica la LÓGICA de la ruta (validación, tope de turnos, token de
 // sesión, manejo de errores) sin necesitar una ANTHROPIC_API_KEY ni un Supabase reales. Lo único
@@ -26,11 +28,17 @@ vi.mock("@/lib/supabase/persistencia", () => ({
   validarToken: (...args: unknown[]) => mockValidarToken(...args),
   incrementarTurno: (...args: unknown[]) => mockIncrementarTurno(...args),
   persistirCierre: (...args: unknown[]) => mockPersistirCierre(...args),
+  registrarNotificacionAsesor: (...args: unknown[]) => mockRegistrarNotificacionAsesor(...args),
+}));
+
+vi.mock("@/lib/email/aviso-asesor", () => ({
+  enviarAvisoAsesor: (...args: unknown[]) => mockEnviarAvisoAsesor(...args),
 }));
 
 const { POST } = await import("./route");
 
 const TOKEN = "tok-valido";
+const ADVISOR_EMAIL_ORIGINAL = process.env.ADVISOR_NOTIFICATION_EMAIL;
 
 function req(body: unknown): Request {
   return new Request("http://localhost/api/chat", {
@@ -50,6 +58,8 @@ describe("POST /api/chat", () => {
     mockValidarToken.mockReset();
     mockIncrementarTurno.mockReset();
     mockPersistirCierre.mockReset();
+    mockRegistrarNotificacionAsesor.mockReset();
+    mockEnviarAvisoAsesor.mockReset();
     // Por defecto, un token válido de una conversación recién creada (0 turnos hasta ahora) —
     // los tests que no son sobre el token en sí no necesitan repetir esto.
     mockValidarToken.mockResolvedValue({ id: "conv-1", turnosTotales: 0 });
@@ -60,6 +70,13 @@ describe("POST /api/chat", () => {
       informeId: "informe-1",
       planId: "plan-1",
     });
+    mockRegistrarNotificacionAsesor.mockResolvedValue(undefined);
+    mockEnviarAvisoAsesor.mockResolvedValue(undefined);
+    process.env.ADVISOR_NOTIFICATION_EMAIL = "asesor@example.com";
+  });
+
+  afterEach(() => {
+    process.env.ADVISOR_NOTIFICATION_EMAIL = ADVISOR_EMAIL_ORIGINAL;
   });
 
   it("rechaza JSON inválido", async () => {
@@ -279,6 +296,57 @@ situacion_laboral: diseñadora gráfica en plantilla [confirmado]
       expect(res.status).toBe(502);
       const data = await res.json();
       expect(data.error).toBeTruthy();
+    });
+
+    describe("aviso al asesor (M-05)", () => {
+      async function cerrarConversacion() {
+        mockCreate
+          .mockResolvedValueOnce({ content: [{ type: "text", text: FICHA_MINIMA }] })
+          .mockResolvedValueOnce({ content: [{ type: "text", text: "## Tu meta\n..." }] });
+        return POST(reqConToken({ messages: [{ role: "user", content: "ya está" }] }));
+      }
+
+      it("envía el aviso y lo registra como enviado", async () => {
+        const res = await cerrarConversacion();
+        expect(res.status).toBe(200);
+        expect(mockEnviarAvisoAsesor).toHaveBeenCalledWith(
+          "asesor@example.com",
+          expect.objectContaining({ fichaId: "ficha-1", informeId: "informe-1", modo: expect.any(String) }),
+        );
+        expect(mockRegistrarNotificacionAsesor).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ conversacionId: "conv-1", destinatario: "asesor@example.com", exito: true }),
+        );
+      });
+
+      it("si falla el envío, se registra como fallido pero el visitante SÍ recibe su plan", async () => {
+        mockEnviarAvisoAsesor.mockRejectedValue(new Error("Resend caído"));
+        const res = await cerrarConversacion();
+
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.message.content).toBe("## Tu meta\n...");
+        expect(mockRegistrarNotificacionAsesor).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ exito: false }),
+        );
+      });
+
+      it("sin ADVISOR_NOTIFICATION_EMAIL configurado, no intenta enviar ni registrar, y no rompe el turno", async () => {
+        delete process.env.ADVISOR_NOTIFICATION_EMAIL;
+        const res = await cerrarConversacion();
+        expect(res.status).toBe(200);
+        expect(mockEnviarAvisoAsesor).not.toHaveBeenCalled();
+        expect(mockRegistrarNotificacionAsesor).not.toHaveBeenCalled();
+      });
+
+      it("si falla incluso el registro de la notificación, el visitante sigue recibiendo su plan", async () => {
+        mockRegistrarNotificacionAsesor.mockRejectedValue(new Error("boom"));
+        const res = await cerrarConversacion();
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.message.content).toBe("## Tu meta\n...");
+      });
     });
   });
 });

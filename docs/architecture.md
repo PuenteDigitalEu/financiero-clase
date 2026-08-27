@@ -16,7 +16,11 @@
 - **Supabase Auth:** login del asesor para el panel `S-01` (magic link a su email — no hace falta
   gestionar contraseñas para un único usuario). Los visitantes del chat **no** se autentican, por
   diseño (`WON'T` del PRD).
-- **Supabase (Edge Function + SMTP) o Auth emails:** envío del aviso automático al asesor (`M-05`).
+- **Resend:** envío del aviso automático al asesor (`M-05`). Decisión tomada el 2026-08-27 (antes
+  quedaba abierta entre esto y una Edge Function de Supabase + SMTP): Resend se llama por HTTP
+  directamente desde `app/api/chat/`, sin nada que desplegar aparte — una Edge Function habría
+  necesitado desplegarse contra Supabase, algo que este agente no puede hacer por su cuenta (ver
+  "Límites de ejecución" en `CLAUDE.md`), y credenciales SMTP adicionales.
 - **Anthropic Claude API:** motor conversacional. `instrucciones-sistema.md` (entrevista) e
   `instrucciones-motor.md` (análisis) se usan como system prompts. Requiere revisión antes de
   implementarse — ver "Decisiones técnicas relevantes".
@@ -29,7 +33,7 @@
 | Base de datos | Supabase (Postgres) | Persistencia de fichas/diagnósticos, ya provisionado |
 | Autenticación | Supabase Auth (magic link, solo asesor) | Un único usuario administrador; visitantes sin cuenta |
 | IA conversacional | Anthropic Claude API | Las instrucciones ya existen en formato system prompt de Claude |
-| Email transaccional | Supabase (Edge Function + SMTP) | Reutiliza infraestructura ya presente, sin dar de alta un servicio nuevo |
+| Email transaccional | Resend | API HTTP directa desde `app/api/chat/`, sin infraestructura que desplegar (ver decisión 2026-08-27) |
 | Estilos | Tailwind CSS | Velocidad de desarrollo, encaja con la paleta de `design-system.md` |
 | Despliegue | Vercel | Zero-config para Next.js, previews por rama |
 
@@ -46,7 +50,7 @@ graph TD
   RateLimit -->|excedido| Rechazo[Rechaza turno]
   ChatAPI -->|token de sesion valida escritura| DB[(Supabase Postgres)]
   ChatAPI -->|guarda cliente, ficha, informe, plan| DB
-  ChatAPI -->|dispara aviso| EmailFn[Supabase Edge Function + SMTP]
+  ChatAPI -->|dispara aviso| EmailFn[Resend, API HTTP]
   EmailFn -->|email de aviso| Advisor[Asesor]
   Advisor -->|login magic link + fila en asesores| AuthSB[Supabase Auth]
   Advisor -->|consulta casos| Panel[Panel asesor - Next.js]

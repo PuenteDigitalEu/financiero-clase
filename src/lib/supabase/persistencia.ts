@@ -284,3 +284,21 @@ async function enlazarCliente(
 
   return clienteId;
 }
+
+/**
+ * M-05/FLOW-02: deja constancia del intento de aviso al asesor, se haya enviado o no. Un fallo de
+ * envío nunca debe perder la ficha ni el informe (ya persistidos por `persistirCierre`
+ * independientemente) — por eso esto solo registra, no decide si reintentar ni bloquea nada.
+ */
+export async function registrarNotificacionAsesor(
+  supabase: SupabaseClient,
+  params: { conversacionId: string; destinatario: string; exito: boolean },
+): Promise<void> {
+  const { error } = await supabase.from("notificaciones_asesor").insert({
+    conversacion_id: params.conversacionId,
+    destinatario: params.destinatario,
+    enviado_en: params.exito ? new Date().toISOString() : null,
+    estado: params.exito ? "enviado" : "fallido",
+  });
+  if (error) throw new Error(`No se pudo registrar la notificación al asesor: ${error.message}`);
+}

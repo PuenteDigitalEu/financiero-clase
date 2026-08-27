@@ -4,10 +4,20 @@ import { NextResponse } from "next/server";
 import { clienteClaude, MODELO_ENTREVISTA } from "@/lib/claude/client";
 import { generarPlan } from "@/lib/claude/plan";
 import { cargarSystemPromptEntrevista } from "@/lib/claude/system-prompt";
+import { enviarAvisoAsesor } from "@/lib/email/aviso-asesor";
+import type { Ficha } from "@/lib/motor/ficha";
+import type { Informe } from "@/lib/motor/informe";
 import { calcularInforme } from "@/lib/motor/informe";
 import { contieneFicha, parsearFicha } from "@/lib/motor/parseo";
 import { clienteSupabase } from "@/lib/supabase/server";
-import { incrementarTurno, persistirCierre, validarToken } from "@/lib/supabase/persistencia";
+import {
+  incrementarTurno,
+  persistirCierre,
+  registrarNotificacionAsesor,
+  validarToken,
+  type ResultadoCierre,
+} from "@/lib/supabase/persistencia";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // fs.readFileSync (en system-prompt.ts) necesita el runtime de Node, no Edge.
 export const runtime = "nodejs";
@@ -114,7 +124,17 @@ export async function POST(request: Request) {
       // Si la persistencia falla, no se le muestra el plan al visitante (aunque ya esté
       // calculado): un diagnóstico que nunca se guardó no se puede auditar después ni consultar
       // desde el panel del asesor — mejor un error claro que invite a reintentar (FLOW-01).
-      await persistirCierre(supabase, { conversacionId: conversacion.id, ficha, informe, planMarkdown: plan });
+      const resultado = await persistirCierre(supabase, {
+        conversacionId: conversacion.id,
+        ficha,
+        informe,
+        planMarkdown: plan,
+      });
+
+      // M-05/FLOW-02: el aviso al asesor nunca bloquea la respuesta al visitante — su plan ya está
+      // calculado y persistido de forma independiente. Un fallo de envío se registra como
+      // `fallido`, no se reintenta aquí ni impide que el visitante vea su diagnóstico.
+      await avisarAsesorSinBloquear(supabase, conversacion.id, ficha, informe, plan, resultado);
 
       return NextResponse.json({ message: { role: "assistant", content: plan } });
     }
@@ -126,6 +146,47 @@ export async function POST(request: Request) {
       { error: "No se pudo procesar el mensaje. Inténtalo de nuevo." },
       { status: 502 },
     );
+  }
+}
+
+/**
+ * M-05/FLOW-02: envía el aviso al asesor y deja constancia en `notificaciones_asesor`, siempre —
+ * el intento se registra tanto si Resend confirma el envío como si falla. Nunca lanza: un problema
+ * aquí no debe tirar abajo el turno que ya le está devolviendo el plan al visitante.
+ */
+async function avisarAsesorSinBloquear(
+  supabase: SupabaseClient,
+  conversacionId: string,
+  ficha: Ficha,
+  informe: Informe,
+  planMarkdown: string,
+  resultado: ResultadoCierre,
+): Promise<void> {
+  const destinatario = process.env.ADVISOR_NOTIFICATION_EMAIL;
+  if (!destinatario) {
+    console.warn("ADVISOR_NOTIFICATION_EMAIL no está configurada — no se envía aviso al asesor.");
+    return;
+  }
+
+  let exito = true;
+  try {
+    await enviarAvisoAsesor(destinatario, {
+      nombreCliente: ficha.nombre.valor,
+      emailCliente: ficha.email.valor,
+      modo: informe.modo,
+      fichaId: resultado.fichaId,
+      informeId: resultado.informeId,
+      planMarkdown,
+    });
+  } catch (error) {
+    exito = false;
+    console.error("Error enviando el aviso al asesor:", error);
+  }
+
+  try {
+    await registrarNotificacionAsesor(supabase, { conversacionId, destinatario, exito });
+  } catch (error) {
+    console.error("Error registrando la notificación al asesor:", error);
   }
 }
 

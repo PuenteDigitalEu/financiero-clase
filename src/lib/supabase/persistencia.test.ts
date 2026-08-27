@@ -7,6 +7,7 @@ import {
   crearConversacion,
   incrementarTurno,
   persistirCierre,
+  registrarNotificacionAsesor,
   validarToken,
 } from "./persistencia";
 
@@ -306,6 +307,53 @@ describe("persistirCierre", () => {
         planMarkdown: "texto",
       }),
     ).rejects.toThrow(/No se pudo guardar el informe/);
+  });
+});
+
+describe("registrarNotificacionAsesor", () => {
+  it("éxito: enviado_en con fecha, estado 'enviado'", async () => {
+    const supabase = crearSupabaseFake({ notificaciones_asesor: [{ data: null, error: null }] });
+    await registrarNotificacionAsesor(supabase as never, {
+      conversacionId: "conv-1",
+      destinatario: "asesor@example.com",
+      exito: true,
+    });
+    const insercion = supabase.llamadas.find((l) => l.tabla === "notificaciones_asesor");
+    expect(insercion?.payload).toMatchObject({
+      conversacion_id: "conv-1",
+      destinatario: "asesor@example.com",
+      estado: "enviado",
+    });
+    expect((insercion?.payload as { enviado_en: string | null }).enviado_en).not.toBeNull();
+  });
+
+  it("fallo: enviado_en null, estado 'fallido'", async () => {
+    const supabase = crearSupabaseFake({ notificaciones_asesor: [{ data: null, error: null }] });
+    await registrarNotificacionAsesor(supabase as never, {
+      conversacionId: "conv-1",
+      destinatario: "asesor@example.com",
+      exito: false,
+    });
+    const insercion = supabase.llamadas.find((l) => l.tabla === "notificaciones_asesor");
+    expect(insercion?.payload).toEqual({
+      conversacion_id: "conv-1",
+      destinatario: "asesor@example.com",
+      enviado_en: null,
+      estado: "fallido",
+    });
+  });
+
+  it("lanza con mensaje claro si falla el propio registro", async () => {
+    const supabase = crearSupabaseFake({
+      notificaciones_asesor: [{ data: null, error: { message: "boom" } }],
+    });
+    await expect(
+      registrarNotificacionAsesor(supabase as never, {
+        conversacionId: "conv-1",
+        destinatario: "asesor@example.com",
+        exito: true,
+      }),
+    ).rejects.toThrow(/No se pudo registrar la notificación/);
   });
 });
 
