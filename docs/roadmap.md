@@ -77,14 +77,14 @@
       real: el proyecto tenía un esquema completamente distinto (`entrevistas`/`analisis`/`mensajes`
       de una versión anterior), no el de esta migración — el usuario confirmó que estaba vacío, se
       limpió y se aplicó `001_esquema_inicial.sql` de verdad.
-- [~] Aviso automático por email al asesor al completarse una conversación — `M-05`. Ficha
-      `docs/features/aviso-al-asesor.md`. Resend por API HTTP directa (decisión 2026-08-27, ver
-      `architecture.md` — más simple que una Edge Function de Supabase, nada que desplegar). Se
-      dispara al mismo tiempo que `M-04` persiste el cierre; nunca bloquea la respuesta al
-      visitante aunque el envío falle (`FLOW-02`) — se registra siempre en `notificaciones_asesor`
-      (`enviado`/`fallido`). **Verificado:** 126/126 tests (Resend y Supabase mockeados).
-      **Sin verificar en vivo:** falta que el usuario cree la cuenta de Resend (gratuita) y ponga
-      `RESEND_API_KEY` + `ADVISOR_NOTIFICATION_EMAIL` en `.env.local`.
+- [x] Aviso automático por email al asesor al completarse una conversación — `M-05`. Ficha
+      `docs/features/aviso-al-asesor.md`, **Verificada**. Resend por API HTTP directa (decisión
+      2026-08-27, ver `architecture.md` — más simple que una Edge Function de Supabase, nada que
+      desplegar). Se dispara al mismo tiempo que `M-04` persiste el cierre; nunca bloquea la
+      respuesta al visitante aunque el envío falle (`FLOW-02`) — se registra siempre en
+      `notificaciones_asesor` (`enviado`/`fallido`). **Verificado:** 126/126 tests (mockeado) y en
+      vivo (2026-08-27): email real enviado sin error, notificación registrada de verdad contra
+      Supabase y limpiada sin dejar rastro.
 - [x] Consentimiento de tratamiento de datos antes de crear la conversación — `M-06`. Ver `M-04`
       arriba (construidas y verificadas juntas). `POST /api/conversacion` crea la conversación con
       `consentimiento_en` al aceptar la nueva `ConsentScreen`, antes de la cual no existe ninguna

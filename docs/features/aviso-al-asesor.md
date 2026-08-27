@@ -1,6 +1,6 @@
 # Aviso automático al asesor (M-05)
 
-**Estado:** En construcción
+**Estado:** Verificada
 **Requisitos que cierra:** M-05
 **Fecha de acuerdo:** 2026-08-27
 
@@ -49,7 +49,6 @@ normalidad.
 - Plantilla HTML del email (texto plano por ahora).
 - Reintento automático de envíos fallidos.
 - Verificación de dominio propio en Resend (usa el sandbox `resend.dev` mientras tanto).
-- Verificación en vivo contra Resend real — pendiente de que el usuario cree la cuenta (gratuita) y
-  dé `RESEND_API_KEY` + `ADVISOR_NOTIFICATION_EMAIL` en `.env.local`, igual que con
-  `ANTHROPIC_API_KEY`/Supabase. Sin eso, esta ficha se queda en "En construcción" con todo lo demás
-  verificado (mocks + Supabase real para el registro en `notificaciones_asesor`).
+- **Verificado en vivo (2026-08-27):** email real enviado sin error a `ADVISOR_NOTIFICATION_EMAIL`
+  vía Resend, y notificación registrada de verdad en `notificaciones_asesor` contra el Supabase
+  real — fila leída de vuelta y limpiada después, sin dejar rastro.
