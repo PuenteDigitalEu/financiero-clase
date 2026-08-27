@@ -65,23 +65,24 @@
       (ver `docs/data-model.md` → `planes.markdown`). **Sin revisión visual en navegador** — mismo
       bloqueo que M-01/M-02. Persistencia en Supabase (`informes`/`planes`) queda para `M-04`, sin
       la cual esta ruta sigue sin estado en servidor a propósito (igual que `M-02`).
-- [~] Persistencia de cada conversación (ficha + informe) en Supabase — `M-04`. Construida junto con
-      `M-06` (ficha `docs/features/consentimiento-y-persistencia.md`): comparten el `token` de
-      sesión que crea el consentimiento. `lib/supabase/persistencia.ts` persiste cliente (enlazado
-      por email si ya existía) + ficha + deudas + informe + plan al cerrar la entrevista, y marca la
-      conversación `completada`. Sin transacción SQL (riesgo aceptado para el MVP, ver la ficha).
-      **Verificado:** 115/115 tests con Supabase mockeado, `scripts/verificar-persistencia.mjs`
-      (PGlite, Postgres real vía WASM) — incluye 5 casos negativos (unique, not null, check, FK).
-      **Sin verificar en vivo todavía:** el usuario ya puso las credenciales reales de Supabase en
-      `.env.local`, pero la migración no está aplicada contra el proyecto real (aplicar DDL no es
-      algo que este agente haga sin más — pendiente de que el usuario la ejecute desde el SQL
-      Editor del panel).
+- [x] Persistencia de cada conversación (ficha + informe) en Supabase — `M-04`. Construida junto con
+      `M-06` (ficha `docs/features/consentimiento-y-persistencia.md`, **Verificada**): comparten el
+      `token` de sesión que crea el consentimiento. `lib/supabase/persistencia.ts` persiste cliente
+      (enlazado por email si ya existía) + ficha + deudas + informe + plan al cerrar la entrevista, y
+      marca la conversación `completada`. Sin transacción SQL (riesgo aceptado para el MVP, ver la
+      ficha). **Verificado:** 115/115 tests con Supabase mockeado, `scripts/verificar-persistencia.mjs`
+      (PGlite) con 5 casos negativos, **y en vivo contra el Supabase real** (2026-08-27): ciclo
+      completo (crear conversación → validar token → incrementar turno → persistir cierre → leer
+      cada fila de vuelta) verificado y limpiado sin dejar rastro. De camino apareció un problema
+      real: el proyecto tenía un esquema completamente distinto (`entrevistas`/`analisis`/`mensajes`
+      de una versión anterior), no el de esta migración — el usuario confirmó que estaba vacío, se
+      limpió y se aplicó `001_esquema_inicial.sql` de verdad.
 - [ ] Aviso automático por email al asesor al completarse una conversación — `M-05`.
-- [~] Consentimiento de tratamiento de datos antes de crear la conversación — `M-06`. Ver `M-04`
-      arriba (construidas juntas). `POST /api/conversacion` crea la conversación con
+- [x] Consentimiento de tratamiento de datos antes de crear la conversación — `M-06`. Ver `M-04`
+      arriba (construidas y verificadas juntas). `POST /api/conversacion` crea la conversación con
       `consentimiento_en` al aceptar la nueva `ConsentScreen`, antes de la cual no existe ninguna
-      fila ni dato personal. Bloqueante: no se expone la landing sin esto — sigue bloqueante hasta
-      la verificación en vivo.
+      fila ni dato personal. Sigue pendiente solo la revisión visual del clic en un navegador real
+      (mismo bloqueo que M-01/M-02: la extensión de Chrome no tiene el plan necesario).
 - [ ] Límite de uso por IP (hash) en `app/api/chat/` (ver `architecture.md` → "Protección contra
       abuso"). Bloqueante: la URL es pública y cada mensaje cuesta dinero real.
 

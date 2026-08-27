@@ -246,13 +246,13 @@ RLS **activado** en las nueve tablas (`asesores`, `clientes`, `conversaciones`, 
 
 ## Migraciones
 
-Escrita, verificada localmente y **todavía no aplicada** contra el proyecto Supabase real.
+Escrita, verificada localmente y **aplicada contra el proyecto Supabase real** (2026-08-27).
 
 | Fecha | Archivo | Descripción |
 |-------|---------|-------------|
-| 2026-08-25 (escrita) | `supabase/migrations/001_esquema_inicial.sql` | Crea el enum `dato_estado` y las tablas `asesores`, `clientes`, `conversaciones`, `limites_uso`, `fichas`, `deudas`, `informes`, `planes`, `notificaciones_asesor`, con sus RLS y la función `es_asesor()` |
+| 2026-08-25 (escrita), 2026-08-27 (aplicada) | `supabase/migrations/001_esquema_inicial.sql` | Crea el enum `dato_estado` y las tablas `asesores`, `clientes`, `conversaciones`, `limites_uso`, `fichas`, `deudas`, `informes`, `planes`, `notificaciones_asesor`, con sus RLS y la función `es_asesor()` |
 
-**Verificación realizada:** ejecutada contra Postgres real vía PGlite (WASM), con roles
+**Verificación local:** ejecutada contra Postgres real vía PGlite (WASM), con roles
 `authenticated`/`anon`/`service_role` y un `auth.users`/`auth.uid()` mínimos simulados (Supabase los
 provee de forma nativa). Se comprobó: la migración aplica sin errores; RLS queda activado en las 9
 tablas; inserción de una fila completa por toda la cadena de FKs (`clientes` → `conversaciones` →
@@ -260,11 +260,13 @@ tablas; inserción de una fila completa por toda la cadena de FKs (`clientes` �
 `ingresos_estabilidad`) rechazan valores fuera de lista; `conversaciones.consentimiento_en not null`
 impide crear una conversación sin consentimiento (`M-06`).
 
-**No aplicada aún contra Supabase real:** el servidor MCP está en modo `read_only=true` (ver
-"MCPs del proyecto" en `architecture.md`) y no se dispone de `SUPABASE_SERVICE_ROLE_KEY` en este
-entorno — ninguno de los dos permite aplicar migraciones desde aquí. Aplicarla requiere quitar esa
-restricción del MCP o usar el CLI/dashboard de Supabase con las credenciales reales, y es una
-acción sobre infraestructura compartida que le corresponde ejecutar al usuario.
+**Aplicada contra Supabase real (2026-08-27):** el usuario la ejecutó desde el SQL Editor del panel,
+con las credenciales reales ya puestas en `.env.local`. El proyecto tenía un esquema previo
+completamente distinto (`entrevistas`/`analisis`/`mensajes`, de una versión anterior del diseño) —
+confirmado vacío y sustituido por este, tras limpiarlo. Verificado después en vivo: las 9 tablas y
+sus columnas exactas existen (vía el esquema OpenAPI de PostgREST), y un ciclo completo de escritura
+(conversación → token → cierre con cliente/ficha/deudas/informe/plan) funciona igual que contra
+PGlite (ver `docs/features/consentimiento-y-persistencia.md`, Verificada).
 
 ---
 

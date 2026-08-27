@@ -1,6 +1,6 @@
 # Consentimiento y persistencia (M-06 + M-04)
 
-**Estado:** En construcción
+**Estado:** Verificada
 **Requisitos que cierra:** M-04, M-06
 **Fecha de acuerdo:** 2026-08-27
 
@@ -23,14 +23,15 @@ Sin credenciales reales de Supabase en este entorno (`SUPABASE_SERVICE_ROLE_KEY`
 Supabase mockeado (tests de las rutas) y con PGlite (Postgres real, WASM) para las queries de
 escritura de verdad — no contra el proyecto real, igual que pasó con la migración inicial.
 
-**Estado real (2026-08-27):** código completo, con `pnpm test` (mockeado), `scripts/verificar-persistencia.mjs`
-(PGlite) y `pnpm build`/`tsc` en verde. El usuario ya rellenó las credenciales reales de Supabase en
-`.env.local`, pero la migración (`supabase/migrations/001_esquema_inicial.sql`) todavía no está
-aplicada contra el proyecto real (`public.conversaciones` no existe ahí) — confirmado al intentar la
-verificación en vivo. Aplicar una migración es infraestructura compartida, no algo que este agente
-haga sin más (`CLAUDE.md` → "Desplegar no es tuyo"): pendiente de que el usuario la ejecute desde el
-SQL Editor del panel de Supabase. En cuanto esté aplicada, la verificación en vivo se repite antes
-de marcar la ficha como Verificada.
+**Estado real (2026-08-27):** verificada de extremo a extremo, en vivo, contra el proyecto Supabase
+real. El primer intento reveló que el proyecto tenía un esquema completamente distinto (tablas
+`entrevistas`/`analisis`/`mensajes` de una versión anterior del diseño, no la migración de este
+repo) — el usuario confirmó que estaba vacío, se limpiaron esas tablas y se aplicó
+`supabase/migrations/001_esquema_inicial.sql` desde el SQL Editor del panel. Verificado después:
+las 9 tablas y sus columnas exactas existen (comprobado leyendo el esquema OpenAPI de PostgREST), y
+un ciclo completo real — crear conversación, validar token, incrementar turno, `persistirCierre`
+(cliente + ficha + deuda + informe + plan), leer cada fila de vuelta y comprobar sus valores —
+funciona igual que contra PGlite. La fila de prueba se borró al terminar, sin dejar rastro.
 
 ## Decisiones tomadas
 
@@ -76,10 +77,10 @@ de marcar la ficha como Verificada.
 | Requisito | Se implementa en | Se valida con |
 |-----------|------------------|---------------|
 | M-06 | `src/app/api/conversacion/route.ts` (crea la conversación al aceptar el consentimiento) | `src/app/api/conversacion/route.test.ts` |
-| M-06 | `src/components/chat/consent-screen.tsx` + cambios en `chat-window.tsx` (pantalla previa a "Empezar", llama a `POST /api/conversacion`, guarda el token en estado de React) | no verificable por interfaz: componente visual + integración de red desde el navegador, sin E2E `FLOW-01` construido todavía (`docs/testing.md`); se comprueba manualmente sirviendo `pnpm dev` en `/chat` y confirmando que la conversación se crea en PGlite antes de "Empezar" |
-| M-04 | `src/lib/motor/ficha.ts` + `src/lib/motor/parseo.ts` (campo `email` añadido al contrato) | `src/lib/motor/parseo.test.ts` (casos nuevos con email) |
+| M-06 | `src/components/chat/consent-screen.tsx` + cambios en `chat-window.tsx` (pantalla previa a "Empezar", llama a `POST /api/conversacion`, guarda el token en estado de React) | no verificable por interfaz: componente visual + integración de red desde el navegador, sin E2E `FLOW-01` construido todavía (`docs/testing.md`); la ruta que llama (`POST /api/conversacion`) ya está verificada en vivo contra Supabase real — falta la revisión visual del clic en el propio navegador, pendiente por el mismo bloqueo que M-01/M-02 (extensión de Chrome sin plan de pago) |
+| M-04 | `src/lib/motor/ficha.ts` + `src/lib/motor/parseo.ts` (campo `email` añadido al contrato) | `src/lib/motor/parseo.test.ts` |
 | M-04 | `src/lib/supabase/server.ts` (cliente con `SUPABASE_SERVICE_ROLE_KEY`, solo servidor) | no verificable por interfaz: cliente sin lógica propia; lo ejercitan los tests de las rutas que lo usan (filas siguientes) |
-| M-04 | `src/app/api/chat/route.ts` (valida `token` en cada turno; al detectar la ficha de cierre, persiste cliente/ficha/deudas/informe/plan y marca `completada`) | `src/app/api/chat/route.test.ts` (Supabase mockeado) |
+| M-04 | `src/app/api/chat/route.ts` (valida `token` en cada turno; al detectar la ficha de cierre, persiste cliente/ficha/deudas/informe/plan y marca `completada`) | `src/app/api/chat/route.test.ts` |
 | M-04 | Queries de escritura reales (inserts de cierre, upsert de cliente por email) | `scripts/verificar-persistencia.mjs` |
 
 ## Fuera de esta feature
