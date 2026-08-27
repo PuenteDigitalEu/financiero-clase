@@ -6,6 +6,7 @@ const mockIncrementarTurno = vi.fn();
 const mockPersistirCierre = vi.fn();
 const mockRegistrarNotificacionAsesor = vi.fn();
 const mockEnviarAvisoAsesor = vi.fn();
+const mockComprobarLimiteUso = vi.fn();
 
 // Mockeado a propósito: esto verifica la LÓGICA de la ruta (validación, tope de turnos, token de
 // sesión, manejo de errores) sin necesitar una ANTHROPIC_API_KEY ni un Supabase reales. Lo único
@@ -29,6 +30,7 @@ vi.mock("@/lib/supabase/persistencia", () => ({
   incrementarTurno: (...args: unknown[]) => mockIncrementarTurno(...args),
   persistirCierre: (...args: unknown[]) => mockPersistirCierre(...args),
   registrarNotificacionAsesor: (...args: unknown[]) => mockRegistrarNotificacionAsesor(...args),
+  comprobarLimiteUso: (...args: unknown[]) => mockComprobarLimiteUso(...args),
 }));
 
 vi.mock("@/lib/email/aviso-asesor", () => ({
@@ -39,6 +41,7 @@ const { POST } = await import("./route");
 
 const TOKEN = "tok-valido";
 const ADVISOR_EMAIL_ORIGINAL = process.env.ADVISOR_NOTIFICATION_EMAIL;
+const PEPPER_ORIGINAL = process.env.IP_HASH_PEPPER;
 
 function req(body: unknown): Request {
   return new Request("http://localhost/api/chat", {
@@ -72,11 +75,15 @@ describe("POST /api/chat", () => {
     });
     mockRegistrarNotificacionAsesor.mockResolvedValue(undefined);
     mockEnviarAvisoAsesor.mockResolvedValue(undefined);
+    mockComprobarLimiteUso.mockReset();
+    mockComprobarLimiteUso.mockResolvedValue(true);
     process.env.ADVISOR_NOTIFICATION_EMAIL = "asesor@example.com";
+    process.env.IP_HASH_PEPPER = "pepper-de-prueba";
   });
 
   afterEach(() => {
     process.env.ADVISOR_NOTIFICATION_EMAIL = ADVISOR_EMAIL_ORIGINAL;
+    process.env.IP_HASH_PEPPER = PEPPER_ORIGINAL;
   });
 
   it("rechaza JSON inválido", async () => {
@@ -167,6 +174,34 @@ describe("POST /api/chat", () => {
       mockValidarToken.mockRejectedValue(new Error("boom"));
       const res = await POST(reqConToken({ messages: [{ role: "user", content: "Hola" }] }));
       expect(res.status).toBe(502);
+    });
+  });
+
+  describe("límite de uso por IP", () => {
+    it("por encima del límite: 429 con mensaje genérico, no llama a Claude", async () => {
+      mockComprobarLimiteUso.mockResolvedValue(false);
+      const res = await POST(reqConToken({ messages: [{ role: "user", content: "Hola" }] }));
+      expect(res.status).toBe(429);
+      expect(mockCreate).not.toHaveBeenCalled();
+    });
+
+    it("comprueba el límite con la acción 'enviar_mensaje'", async () => {
+      mockCreate.mockResolvedValue({ content: [{ type: "text", text: "ok" }] });
+      await POST(reqConToken({ messages: [{ role: "user", content: "Hola" }] }));
+      expect(mockComprobarLimiteUso).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(String),
+        "enviar_mensaje",
+        expect.any(Number),
+        expect.any(Number),
+      );
+    });
+
+    it("si falla la comprobación del límite, responde 502 sin llamar a Claude", async () => {
+      mockComprobarLimiteUso.mockRejectedValue(new Error("boom"));
+      const res = await POST(reqConToken({ messages: [{ role: "user", content: "Hola" }] }));
+      expect(res.status).toBe(502);
+      expect(mockCreate).not.toHaveBeenCalled();
     });
   });
 

@@ -90,8 +90,13 @@
       `consentimiento_en` al aceptar la nueva `ConsentScreen`, antes de la cual no existe ninguna
       fila ni dato personal. Sigue pendiente solo la revisión visual del clic en un navegador real
       (mismo bloqueo que M-01/M-02: la extensión de Chrome no tiene el plan necesario).
-- [ ] Límite de uso por IP (hash) en `app/api/chat/` (ver `architecture.md` → "Protección contra
-      abuso"). Bloqueante: la URL es pública y cada mensaje cuesta dinero real.
+- [x] Límite de uso por IP — `M-08` (añadido a `docs/prd.md` con esta feature; antes era prosa sin
+      ID). Ficha `docs/features/limite-de-uso.md`, **Verificada**. `POST /api/conversacion` y
+      `POST /api/chat` comprueban `comprobarLimiteUso()` antes de actuar (10 conversaciones/24h,
+      150 mensajes/24h — constantes en `lib/ip.ts`); IP con HMAC-SHA256 + pepper de despliegue
+      (`IP_HASH_PEPPER`, no un hash desnudo — el espacio IPv4 es pequeño y se revierte por fuerza
+      bruta). 144 tests (mockeado) y **en vivo** (2026-08-27) contra Supabase real y una llamada
+      HTTP real a `/api/conversacion` — todo limpiado después.
 
 **Objetivo de validación:** confirmar que un visitante real completa la entrevista sin abandonarla
 a mitad camino, que el diagnóstico automático que recibe es coherente y útil incluso sin filtro

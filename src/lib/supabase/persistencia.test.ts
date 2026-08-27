@@ -4,6 +4,7 @@ import type { Dato, Deuda, Ficha } from "@/lib/motor/ficha";
 import { calcularInforme } from "@/lib/motor/informe";
 
 import {
+  comprobarLimiteUso,
   crearConversacion,
   incrementarTurno,
   persistirCierre,
@@ -11,10 +12,10 @@ import {
   validarToken,
 } from "./persistencia";
 
-type Respuesta = { data: unknown; error: { message: string } | null };
+type Respuesta = { data: unknown; error: { message: string } | null; count?: number };
 
 /**
- * Doble mínimo del cliente Supabase (`from().select/insert/update().eq().single/maybeSingle()`),
+ * Doble mínimo del cliente Supabase (`from().select/insert/update().eq().gte().single/maybeSingle()`),
  * con una cola de respuestas por tabla — cada llamada a una tabla consume la siguiente respuesta
  * de su cola, en el orden en que persistencia.ts las hace. Registra también cada llamada, para
  * poder comprobar qué se mandó a cada tabla, no solo qué se devolvió.
@@ -37,6 +38,7 @@ function crearSupabaseFake(colasPorTabla: Record<string, Respuesta[]>) {
         return builder;
       }),
       eq: vi.fn(() => builder),
+      gte: vi.fn(() => builder),
       single: vi.fn(() => Promise.resolve(siguiente())),
       maybeSingle: vi.fn(() => Promise.resolve(siguiente())),
       then: (resolve: (r: Respuesta) => unknown, reject?: (e: unknown) => unknown) =>
@@ -354,6 +356,56 @@ describe("registrarNotificacionAsesor", () => {
         exito: true,
       }),
     ).rejects.toThrow(/No se pudo registrar la notificación/);
+  });
+});
+
+describe("comprobarLimiteUso", () => {
+  it("por debajo del umbral: permite y registra el uso", async () => {
+    const supabase = crearSupabaseFake({
+      limites_uso: [{ data: null, error: null, count: 3 }, { data: null, error: null }],
+    });
+    const permitido = await comprobarLimiteUso(supabase as never, "hash-1", "enviar_mensaje", 10, 24);
+    expect(permitido).toBe(true);
+    const insercion = supabase.llamadas.find((l) => l.tabla === "limites_uso" && l.metodo === "insert");
+    expect(insercion?.payload).toEqual({ ip_hash: "hash-1", accion: "enviar_mensaje" });
+  });
+
+  it("en el umbral exacto: rechaza sin insertar (>=, no solo >)", async () => {
+    const supabase = crearSupabaseFake({
+      limites_uso: [{ data: null, error: null, count: 10 }],
+    });
+    const permitido = await comprobarLimiteUso(supabase as never, "hash-1", "enviar_mensaje", 10, 24);
+    expect(permitido).toBe(false);
+    expect(supabase.llamadas.some((l) => l.tabla === "limites_uso" && l.metodo === "insert")).toBe(false);
+  });
+
+  it("por encima del umbral: rechaza sin insertar", async () => {
+    const supabase = crearSupabaseFake({
+      limites_uso: [{ data: null, error: null, count: 25 }],
+    });
+    const permitido = await comprobarLimiteUso(supabase as never, "hash-1", "crear_conversacion", 10, 24);
+    expect(permitido).toBe(false);
+  });
+
+  it("lanza con mensaje claro si falla el conteo", async () => {
+    const supabase = crearSupabaseFake({
+      limites_uso: [{ data: null, error: { message: "boom" } }],
+    });
+    await expect(comprobarLimiteUso(supabase as never, "hash-1", "enviar_mensaje", 10, 24)).rejects.toThrow(
+      /No se pudo comprobar el límite de uso/,
+    );
+  });
+
+  it("lanza con mensaje claro si falla el registro del uso permitido", async () => {
+    const supabase = crearSupabaseFake({
+      limites_uso: [
+        { data: null, error: null, count: 0 },
+        { data: null, error: { message: "boom" } },
+      ],
+    });
+    await expect(comprobarLimiteUso(supabase as never, "hash-1", "enviar_mensaje", 10, 24)).rejects.toThrow(
+      /No se pudo registrar el uso/,
+    );
   });
 });
 

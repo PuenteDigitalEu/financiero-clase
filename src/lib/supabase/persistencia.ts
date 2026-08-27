@@ -302,3 +302,36 @@ export async function registrarNotificacionAsesor(
   });
   if (error) throw new Error(`No se pudo registrar la notificación al asesor: ${error.message}`);
 }
+
+export type AccionLimitada = "crear_conversacion" | "enviar_mensaje";
+
+/**
+ * Protección contra abuso (`docs/features/limite-de-uso.md`): cuenta cuántas veces ha hecho esta
+ * `accion` esa `ipHash` dentro de las últimas `ventanaHoras`. Por debajo del `umbral`, registra
+ * este intento (cuenta para la próxima comprobación) y permite seguir; por encima, rechaza SIN
+ * insertar — un intento rechazado no infla el contador con sus propios rechazos.
+ */
+export async function comprobarLimiteUso(
+  supabase: SupabaseClient,
+  ipHash: string,
+  accion: AccionLimitada,
+  umbral: number,
+  ventanaHoras: number,
+): Promise<boolean> {
+  const desde = new Date(Date.now() - ventanaHoras * 60 * 60 * 1000).toISOString();
+
+  const { count, error: errorConteo } = await supabase
+    .from("limites_uso")
+    .select("id", { count: "exact", head: true })
+    .eq("ip_hash", ipHash)
+    .eq("accion", accion)
+    .gte("creado_en", desde);
+  if (errorConteo) throw new Error(`No se pudo comprobar el límite de uso: ${errorConteo.message}`);
+
+  if ((count ?? 0) >= umbral) return false;
+
+  const { error: errorInsercion } = await supabase.from("limites_uso").insert({ ip_hash: ipHash, accion });
+  if (errorInsercion) throw new Error(`No se pudo registrar el uso: ${errorInsercion.message}`);
+
+  return true;
+}

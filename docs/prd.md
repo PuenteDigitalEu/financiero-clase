@@ -103,6 +103,13 @@ de partida para la siguiente conversación con esa persona — no como sustituto
   patrimonio, cuando se genera el diagnóstico, entonces no se muestra probabilidad de cumplimiento
   (no aplica, no se inventa una cifra aproximada).
 
+- **[M-08] Límite de uso por IP** — Dado que el chat es de acceso público y cada mensaje tiene
+  coste real (API de Claude), cuando una misma IP supera el umbral de conversaciones nuevas o de
+  mensajes en una ventana de tiempo, entonces el servidor rechaza la petición con un mensaje
+  genérico, sin exponer el umbral ni el conteo. Se guarda un hash de la IP, nunca la IP en claro.
+  *Negativo:* dado un visitante dentro del umbral, cuando usa el chat con normalidad, entonces
+  nunca ve ningún efecto de este límite.
+
 ### SHOULD
 - **[S-01] Panel de consulta para el asesor** — Dado que el asesor quiere revisar casos pasados,
   cuando accede al panel, entonces ve el listado de conversaciones completadas con su ficha y

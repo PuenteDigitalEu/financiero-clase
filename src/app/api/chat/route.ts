@@ -5,12 +5,14 @@ import { clienteClaude, MODELO_ENTREVISTA } from "@/lib/claude/client";
 import { generarPlan } from "@/lib/claude/plan";
 import { cargarSystemPromptEntrevista } from "@/lib/claude/system-prompt";
 import { enviarAvisoAsesor } from "@/lib/email/aviso-asesor";
+import { hashIp, obtenerIpVisitante, UMBRAL_ENVIAR_MENSAJE, VENTANA_HORAS } from "@/lib/ip";
 import type { Ficha } from "@/lib/motor/ficha";
 import type { Informe } from "@/lib/motor/informe";
 import { calcularInforme } from "@/lib/motor/informe";
 import { contieneFicha, parsearFicha } from "@/lib/motor/parseo";
 import { clienteSupabase } from "@/lib/supabase/server";
 import {
+  comprobarLimiteUso,
   incrementarTurno,
   persistirCierre,
   registrarNotificacionAsesor,
@@ -30,7 +32,8 @@ interface MensajeChat {
 /**
  * Tope duro de turnos, muy por encima del ~15 que pide `plantilla-entrevista.md` — es una red de
  * seguridad del servidor (evita una conversación descontrolada), no el límite de uso por IP
- * (`docs/architecture.md` → "Protección contra abuso"), que todavía no está construido.
+ * (`docs/architecture.md` → "Protección contra abuso", `docs/features/limite-de-uso.md`), que
+ * limita cuántos turnos procesa una misma IP, no cuántos tiene una conversación concreta.
  */
 const MAX_MENSAJES = 40;
 
@@ -86,6 +89,26 @@ export async function POST(request: Request) {
     // Mensaje genérico a propósito: no revela si el token no existe, ya expiró, o la conversación
     // ya se cerró — el visitante no necesita saber cuál de las tres es (FLOW-01 → "Casos de error").
     return NextResponse.json({ error: "Esta conversación ya no está disponible." }, { status: 401 });
+  }
+
+  try {
+    const ipHash = hashIp(obtenerIpVisitante(request));
+    const permitido = await comprobarLimiteUso(
+      supabase,
+      ipHash,
+      "enviar_mensaje",
+      UMBRAL_ENVIAR_MENSAJE,
+      VENTANA_HORAS,
+    );
+    if (!permitido) {
+      return NextResponse.json(
+        { error: "Se han enviado demasiados mensajes desde aquí. Inténtalo más tarde." },
+        { status: 429 },
+      );
+    }
+  } catch (error) {
+    console.error("Error comprobando el límite de uso en /api/chat:", error);
+    return NextResponse.json({ error: "No se pudo procesar el mensaje. Inténtalo de nuevo." }, { status: 502 });
   }
 
   try {
