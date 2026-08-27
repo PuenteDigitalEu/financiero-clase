@@ -97,6 +97,26 @@ function datoEnum<T extends string>(
 }
 
 /**
+ * `fecha_entrevista` es el único campo del contrato sin etiqueta `[estado]` — nunca pasa por
+ * `datoTexto`, que espera esa etiqueta. Si falta o no tiene forma de fecha, se anota como anomalía
+ * y se deja en `null`: la persistencia decide entonces el respaldo operativo (fecha de hoy), no
+ * este parser — no es un dato del cliente que se pueda "estimar".
+ */
+function fechaEntrevista(campos: Map<string, Campo>, anomalias: string[]): string | null {
+  const campo = campos.get('fecha_entrevista');
+  if (!campo) {
+    anomalias.push('falta la clave "fecha_entrevista"');
+    return null;
+  }
+  const valor = campo.valor.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    anomalias.push(`"fecha_entrevista" no tiene forma YYYY-MM-DD: "${valor}"`);
+    return null;
+  }
+  return valor;
+}
+
+/**
  * `deudas_interes_alto_declarado` es distinto del resto: "no_facilitado" es uno de sus tres
  * valores válidos (no el marcador genérico de "sin dato"), así que no puede pasar por
  * `datoTexto` — ahí "no_facilitado" se convierte en `null`/`pendiente` a propósito para todos
@@ -150,6 +170,8 @@ export function parsearFicha(texto: string): ResultadoParseo {
 
   const ficha: Ficha = {
     nombre: datoTexto(campos, 'nombre', anomalias),
+    email: datoTexto(campos, 'email', anomalias),
+    fechaEntrevista: fechaEntrevista(campos, anomalias),
     ingresosNetosMensual: datoNumero(campos, 'ingresos_netos_mensual', anomalias),
     ingresosEstabilidad: datoEnum(
       campos,

@@ -10,7 +10,7 @@ vi.mock("./client", () => ({
   MODELO_ENTREVISTA: "claude-sonnet-5",
 }));
 
-const { generarPlan } = await import("./plan");
+const { generarPlan, seccionarPlan, DESCARGO_FIJO } = await import("./plan");
 
 function dato<T>(valor: T) {
   return { valor, etiqueta: "confirmado" as const };
@@ -19,6 +19,8 @@ function dato<T>(valor: T) {
 function fichaMinima(): Ficha {
   return {
     nombre: dato("Silvia"),
+    email: dato("silvia@example.com"),
+    fechaEntrevista: "2026-08-25",
     ingresosNetosMensual: dato(2800),
     ingresosEstabilidad: dato("estable"),
     gastosFijosMensual: dato(1600),
@@ -83,5 +85,45 @@ describe("generarPlan", () => {
     const contenido = llamada.messages[0].content as string;
     expect(contenido).toContain(`"${informe.modo}"`);
     expect(contenido).toContain(String(informe.aportacionPropuesta));
+  });
+});
+
+describe("seccionarPlan", () => {
+  it("parte el markdown en secciones por cada encabezado ## ", () => {
+    const markdown = [
+      "## 1. Tu meta",
+      "Bajar el ritmo a los 60.",
+      "",
+      "## 2. Tu foto de hoy",
+      "Cada mes te sobran 580 €.",
+      "Tu colchón está completo.",
+    ].join("\n");
+
+    const secciones = seccionarPlan(markdown);
+
+    expect(secciones).toHaveLength(2);
+    expect(secciones[0]).toEqual({ titulo: "1. Tu meta", contenido: "Bajar el ritmo a los 60." });
+    expect(secciones[1]).toEqual({
+      titulo: "2. Tu foto de hoy",
+      contenido: "Cada mes te sobran 580 €.\nTu colchón está completo.",
+    });
+  });
+
+  it("un título de nivel 1 (#) o de contenido dentro de la sección no la corta", () => {
+    const markdown = "## 1. Tu meta\n# Esto no es un encabezado de sección\nTexto normal.";
+    const secciones = seccionarPlan(markdown);
+    expect(secciones).toHaveLength(1);
+    expect(secciones[0].contenido).toBe("# Esto no es un encabezado de sección\nTexto normal.");
+  });
+
+  it("markdown sin ningún encabezado ## da una lista vacía, no lanza excepción", () => {
+    expect(seccionarPlan("Solo un párrafo, sin secciones.")).toEqual([]);
+  });
+});
+
+describe("DESCARGO_FIJO", () => {
+  it("es el texto exacto de §8 punto 8, palabra por palabra", () => {
+    expect(DESCARGO_FIJO).toContain("no asesoramiento financiero regulado");
+    expect(DESCARGO_FIJO).toContain("Un asesor humano revisará tu caso");
   });
 });

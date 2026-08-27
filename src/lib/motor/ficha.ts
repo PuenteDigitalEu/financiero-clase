@@ -36,6 +36,19 @@ export interface Deuda {
 
 export interface Ficha {
   nombre: Dato<string>;
+  /**
+   * Del contrato de la ficha (bloque 0), pero `lib/motor/` nunca lo usa para ningún cálculo — solo
+   * lo consume la capa de persistencia para crear o enlazar el `cliente` (ver
+   * `docs/data-model.md` → `clientes`: el email vive ahí, no en `fichas`).
+   */
+  email: Dato<string>;
+  /**
+   * Único campo de la ficha sin etiqueta `[confirmado|estimado|pendiente]` en el contrato de texto
+   * (`instrucciones-sistema.md`: `fecha_entrevista: [YYYY-MM-DD]`) — no es un dato que el cliente
+   * pueda ignorar o estimar, lo rellena el propio agente con la fecha real. Por eso es un `string`
+   * plano, no un `Dato<string>`.
+   */
+  fechaEntrevista: string | null;
 
   ingresosNetosMensual: Dato<number>;
   ingresosEstabilidad: Dato<EstabilidadIngresos>;

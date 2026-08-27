@@ -7,6 +7,8 @@ import { clasificarMeta, determinarModo, type Ficha } from './ficha';
 function fichaCompleta(): Ficha {
   return {
     nombre: { valor: 'Silvia', etiqueta: 'confirmado' },
+    email: { valor: 'silvia@example.com', etiqueta: 'confirmado' },
+    fechaEntrevista: '2026-08-25',
     ingresosNetosMensual: { valor: 2800, etiqueta: 'confirmado' },
     ingresosEstabilidad: { valor: 'estable', etiqueta: 'confirmado' },
     gastosFijosMensual: { valor: 2000, etiqueta: 'confirmado' },

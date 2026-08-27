@@ -23,6 +23,8 @@ function deuda(parcial: Partial<{ tipo: string; importe: number; cuota: number; 
 function fichaCompleta(overrides: Partial<Ficha> = {}): Ficha {
   return {
     nombre: dato('Silvia'),
+    email: dato('silvia@example.com'),
+    fechaEntrevista: '2026-08-25',
     ingresosNetosMensual: dato(2800),
     ingresosEstabilidad: dato('estable'),
     gastosFijosMensual: dato(1600),

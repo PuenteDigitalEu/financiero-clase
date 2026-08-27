@@ -53,6 +53,8 @@ describe('parsearFicha', () => {
     const { ficha, anomalias } = parsearFicha(FICHA_COMPLETA);
     expect(anomalias).toEqual([]);
     expect(ficha.nombre).toEqual({ valor: 'Silvia', etiqueta: 'confirmado' });
+    expect(ficha.email).toEqual({ valor: 'silvia@example.com', etiqueta: 'confirmado' });
+    expect(ficha.fechaEntrevista).toBe('2026-08-25');
     expect(ficha.ingresosNetosMensual).toEqual({ valor: 2800, etiqueta: 'confirmado' });
     expect(ficha.ingresosEstabilidad).toEqual({ valor: 'estable', etiqueta: 'confirmado' });
     expect(ficha.riesgoPerfilDerivado).toEqual({ valor: 'moderado', etiqueta: 'confirmado' });
@@ -121,6 +123,20 @@ describe('parsearFicha', () => {
     const { ficha, anomalias } = parsearFicha(texto);
     expect(ficha.ingresosNetosMensual).toEqual({ valor: null, etiqueta: 'pendiente' });
     expect(anomalias.some((a) => a.includes('ingresos_netos_mensual'))).toBe(true);
+  });
+
+  it('fecha_entrevista ausente → null + anomalía (nunca se adivina la fecha)', () => {
+    const texto = FICHA_COMPLETA.replace('fecha_entrevista: 2026-08-25\n', '');
+    const { ficha, anomalias } = parsearFicha(texto);
+    expect(ficha.fechaEntrevista).toBeNull();
+    expect(anomalias.some((a) => a.includes('fecha_entrevista'))).toBe(true);
+  });
+
+  it('fecha_entrevista con formato inválido → null + anomalía', () => {
+    const texto = FICHA_COMPLETA.replace('fecha_entrevista: 2026-08-25', 'fecha_entrevista: 25/08/2026');
+    const { ficha, anomalias } = parsearFicha(texto);
+    expect(ficha.fechaEntrevista).toBeNull();
+    expect(anomalias.some((a) => a.includes('fecha_entrevista'))).toBe(true);
   });
 
   it('patrimonio_distribucion = "no aplica" se guarda como texto, no como no_facilitado', () => {

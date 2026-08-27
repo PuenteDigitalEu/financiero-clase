@@ -6,6 +6,8 @@ import { generarPlan } from "@/lib/claude/plan";
 import { cargarSystemPromptEntrevista } from "@/lib/claude/system-prompt";
 import { calcularInforme } from "@/lib/motor/informe";
 import { contieneFicha, parsearFicha } from "@/lib/motor/parseo";
+import { clienteSupabase } from "@/lib/supabase/server";
+import { incrementarTurno, persistirCierre, validarToken } from "@/lib/supabase/persistencia";
 
 // fs.readFileSync (en system-prompt.ts) necesita el runtime de Node, no Edge.
 export const runtime = "nodejs";
@@ -23,23 +25,25 @@ interface MensajeChat {
 const MAX_MENSAJES = 40;
 
 /**
- * Fases 1-2 del flujo (`instrucciones-sistema.md`): conduce un turno de la entrevista.
+ * Fases 1-4 del flujo, en un turno: entrevista (`instrucciones-sistema.md`) y, al cerrar,
+ * diagnóstico y plan (`instrucciones-motor.md`).
  *
- * Sin estado en el servidor a propósito: el cliente manda el historial completo en cada turno y
- * el servidor solo llama a Claude con ese historial + el system prompt. Así `M-02` no depende de
- * `M-04` (persistencia en Supabase) para poder probarse — la persistencia se añade encima de este
- * mismo contrato sin cambiarlo.
- *
- * Pendiente a propósito, ver docs/roadmap.md: comprobar consentimiento (`M-06`) y límite de uso
- * antes de procesar el turno. Se añaden a esta misma ruta cuando se construyan — no se han
- * simulado aquí para no dar una falsa sensación de que ya están.
+ * `token` es obligatorio (M-06): lo crea `POST /api/conversacion` al aceptar el consentimiento, y
+ * es lo único que autoriza a esta ruta a procesar un turno de esa conversación concreta — sin
+ * token válido, 401 con mensaje genérico (nunca detalle técnico, ver `FLOW-01` → "Casos de
+ * error"). El resto del historial sigue viajando completo en cada turno (sin estado adicional en
+ * el servidor más allá de lo que ya vive en `conversaciones`).
  */
 export async function POST(request: Request) {
-  let body: { messages?: unknown };
+  let body: { token?: unknown; messages?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+  }
+
+  if (typeof body.token !== "string" || body.token.length === 0) {
+    return NextResponse.json({ error: 'El cuerpo debe incluir "token".' }, { status: 400 });
   }
 
   const mensajes = validarMensajes(body.messages);
@@ -57,6 +61,21 @@ export async function POST(request: Request) {
       { error: "Esta conversación ha alcanzado su límite de turnos." },
       { status: 400 },
     );
+  }
+
+  const supabase = clienteSupabase();
+
+  let conversacion;
+  try {
+    conversacion = await validarToken(supabase, body.token);
+  } catch (error) {
+    console.error("Error validando el token en /api/chat:", error);
+    return NextResponse.json({ error: "No se pudo procesar el mensaje. Inténtalo de nuevo." }, { status: 502 });
+  }
+  if (!conversacion) {
+    // Mensaje genérico a propósito: no revela si el token no existe, ya expiró, o la conversación
+    // ya se cerró — el visitante no necesita saber cuál de las tres es (FLOW-01 → "Casos de error").
+    return NextResponse.json({ error: "Esta conversación ya no está disponible." }, { status: 401 });
   }
 
   try {
@@ -77,9 +96,12 @@ export async function POST(request: Request) {
       .map((bloque) => bloque.text)
       .join("\n");
 
+    await incrementarTurno(supabase, conversacion.id, conversacion.turnosTotales);
+
     // Fase 2 → Fase 3-4: cuando el mensaje del agente trae la ficha de cierre, no se le enseña el
-    // volcado en crudo al visitante — se calcula el informe (determinista, lib/motor/) y se
-    // sustituye por el plan ya redactado (§8 de instrucciones-motor.md).
+    // volcado en crudo al visitante — se calcula el informe (determinista, lib/motor/), se
+    // persiste el cierre completo (M-04) y se sustituye por el plan ya redactado (§8 de
+    // instrucciones-motor.md).
     if (contieneFicha(texto)) {
       const { ficha, anomalias } = parsearFicha(texto);
       if (anomalias.length > 0) {
@@ -89,12 +111,17 @@ export async function POST(request: Request) {
       const informe = calcularInforme(ficha);
       const plan = await generarPlan(ficha, informe);
 
+      // Si la persistencia falla, no se le muestra el plan al visitante (aunque ya esté
+      // calculado): un diagnóstico que nunca se guardó no se puede auditar después ni consultar
+      // desde el panel del asesor — mejor un error claro que invite a reintentar (FLOW-01).
+      await persistirCierre(supabase, { conversacionId: conversacion.id, ficha, informe, planMarkdown: plan });
+
       return NextResponse.json({ message: { role: "assistant", content: plan } });
     }
 
     return NextResponse.json({ message: { role: "assistant", content: texto } });
   } catch (error) {
-    console.error("Error llamando a Claude en /api/chat:", error);
+    console.error("Error procesando el turno en /api/chat:", error);
     return NextResponse.json(
       { error: "No se pudo procesar el mensaje. Inténtalo de nuevo." },
       { status: 502 },

@@ -88,9 +88,10 @@ changelog/        → registro de cambios (ver protocolo más abajo)
 mejoras/          → ideas futuras no implementadas
 ```
 
-**Estado real (2026-08-25):** `src/app/` existe con el layout y una página placeholder — la
-landing, el chat y el panel de arriba todavía no están construidos. `lib/motor/` y
-`lib/supabase/`/`lib/claude/` tampoco existen todavía.
+**Estado real (2026-08-27):** landing, chat (`M-02`), motor (`M-03`) y persistencia + consentimiento
+(`M-04`/`M-06`) construidos — ver `docs/roadmap.md`. `lib/supabase/` existe: `server.ts` (cliente
+con la clave de servicio) y `persistencia.ts` (todas las escrituras). Sin construir todavía: `app/panel/`
+(`S-01`), aviso al asesor (`M-05`), límite de uso.
 
 ---
 

@@ -84,3 +84,49 @@ function quitarVallaDeCodigo(texto: string): string {
   const match = texto.trim().match(/^```[a-z]*\n([\s\S]*)\n```$/);
   return match ? match[1] : texto;
 }
+
+export interface SeccionPlan {
+  titulo: string;
+  contenido: string;
+}
+
+/**
+ * Descompone el markdown del plan en sus secciones (`planes.secciones` de `docs/data-model.md`),
+ * partiendo por los encabezados `## ` que impone la estructura fija de §8. Mecánico, no vuelve a
+ * llamar a Claude: la información ya está en el markdown, esto solo la reorganiza.
+ */
+export function seccionarPlan(markdown: string): SeccionPlan[] {
+  const secciones: SeccionPlan[] = [];
+  let tituloActual: string | null = null;
+  let lineasActuales: string[] = [];
+
+  function cerrarSeccion() {
+    if (tituloActual === null) return;
+    secciones.push({ titulo: tituloActual, contenido: lineasActuales.join("\n").trim() });
+    lineasActuales = [];
+  }
+
+  for (const linea of markdown.split("\n")) {
+    const encabezado = linea.match(/^##\s+(.*)$/);
+    if (encabezado) {
+      cerrarSeccion();
+      tituloActual = encabezado[1].trim();
+      continue;
+    }
+    if (tituloActual !== null) lineasActuales.push(linea);
+  }
+  cerrarSeccion();
+
+  return secciones;
+}
+
+/**
+ * Texto fijo de la sección 8 ("La letra pequeña honesta"), tal cual lo exige
+ * `instrucciones-motor.md` §8 punto 8 — palabra por palabra, siempre el mismo, en todo plan
+ * entregado sin excepción. Se guarda como constante en vez de extraerlo de la respuesta de Claude:
+ * así `planes.descargo` es exacto siempre, sin depender de que el modelo lo redacte igual cada vez.
+ */
+export const DESCARGO_FIJO =
+  "Esto es orientación educativa hecha con tus números y supuestos prudentes, no asesoramiento " +
+  "financiero regulado ni una promesa de rentabilidad. Un asesor humano revisará tu caso; para " +
+  "ejecutar cualquier paso (elegir productos concretos, temas fiscales), contrasta primero con él.";

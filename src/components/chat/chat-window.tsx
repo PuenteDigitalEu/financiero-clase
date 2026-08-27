@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { ChatBubble } from "./chat-bubble";
+import { ConsentScreen } from "./consent-screen";
 import { DisclosureBanner } from "./disclosure-banner";
 
 interface Mensaje {
@@ -11,35 +12,37 @@ interface Mensaje {
 }
 
 /**
- * M-02: entrevista guiada por chat. Sin estado en el servidor a propósito (ver
- * src/app/api/chat/route.ts) — el historial completo vive aquí, en el cliente, y se manda entero
- * en cada turno.
+ * M-02 + M-06: entrevista guiada por chat, detrás del consentimiento de tratamiento de datos.
+ * Sin estado adicional en el cliente más allá del `token` de sesión (ver
+ * src/app/api/chat/route.ts) — el historial completo de mensajes sigue viviendo aquí y se manda
+ * entero en cada turno; lo único que cambia es que ahora cada turno viaja con el `token` que
+ * autoriza al servidor a escribir en esa conversación concreta.
  *
- * Pendiente a propósito, ver docs/roadmap.md: el consentimiento explícito de M-06 debería ocurrir
- * antes de la pantalla de "Empezar" (hoy solo se ve el disclaimer regulatorio, que es un acto
- * distinto — ver instrucciones-sistema.md). Se añade cuando se construya M-06, sin cambiar este
- * componente por dentro.
+ * El `token` vive solo en este estado de React, nunca en `localStorage` (ver
+ * docs/features/consentimiento-y-persistencia.md → "Decisiones tomadas"): recargar la página
+ * pierde el hilo, a propósito — no hay forma de recuperar una conversación anterior en esta
+ * versión (`C-01` queda fuera del MVP).
  */
 export function ChatWindow() {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [entrada, setEntrada] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [empezado, setEmpezado] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
   /**
    * `historialParaApi` es lo que se manda a Claude (incluye el "Hola" sintético del arranque);
    * `mostrarDesde` es cuántos mensajes de ese historial ya estaban en pantalla antes de esta
    * llamada — así el "Hola" que dispara la apertura nunca se renderiza como burbuja del visitante.
    */
-  async function enviarTurno(historialParaApi: Mensaje[], mostrarDesde: number) {
+  async function enviarTurno(tokenActivo: string, historialParaApi: Mensaje[], mostrarDesde: number) {
     setCargando(true);
     setError(null);
     try {
       const respuesta = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: historialParaApi }),
+        body: JSON.stringify({ token: tokenActivo, messages: historialParaApi }),
       });
       const datos = await respuesta.json();
       if (!respuesta.ok) {
@@ -53,15 +56,32 @@ export function ChatWindow() {
     }
   }
 
-  function empezar() {
-    setEmpezado(true);
-    void enviarTurno([{ role: "user", content: "Hola" }], 1);
+  /**
+   * M-06: al aceptar, crea la conversación (consentimiento + token) y arranca la entrevista con
+   * ese mismo token. Sin este paso no existe ninguna fila en `conversaciones` — ver
+   * `docs/user-flows.md` → FLOW-01.
+   */
+  async function aceptarConsentimiento() {
+    setCargando(true);
+    setError(null);
+    try {
+      const respuesta = await fetch("/api/conversacion", { method: "POST" });
+      const datos = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(datos.error ?? "No se pudo iniciar la conversación.");
+      }
+      setToken(datos.token as string);
+      void enviarTurno(datos.token as string, [{ role: "user", content: "Hola" }], 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Algo ha ido mal. Recarga e inténtalo de nuevo.");
+      setCargando(false);
+    }
   }
 
   function handleEnviar(evento: React.FormEvent) {
     evento.preventDefault();
     const texto = entrada.trim();
-    if (!texto || cargando) return;
+    if (!texto || cargando || !token) return;
     const nuevoMensaje: Mensaje = { role: "user", content: texto };
     const historial = [...mensajes, nuevoMensaje];
     setMensajes(historial);
@@ -69,21 +89,11 @@ export function ChatWindow() {
     // El primer "Hola" no está en `mensajes` (se ocultó al empezar), así que hay que
     // reconstruirlo delante del historial visible para que Claude siga viendo la conversación
     // completa, aunque el visitante nunca la haya visto en pantalla.
-    void enviarTurno([{ role: "user", content: "Hola" }, ...historial], historial.length + 1);
+    void enviarTurno(token, [{ role: "user", content: "Hola" }, ...historial], historial.length + 1);
   }
 
-  if (!empezado) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-16 text-center">
-        <DisclosureBanner />
-        <button
-          onClick={empezar}
-          className="rounded-lg bg-accent px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-accent/90"
-        >
-          Empezar
-        </button>
-      </div>
-    );
+  if (!token) {
+    return <ConsentScreen onAceptar={() => void aceptarConsentimiento()} cargando={cargando} error={error} />;
   }
 
   return (
