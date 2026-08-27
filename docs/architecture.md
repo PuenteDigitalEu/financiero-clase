@@ -282,7 +282,7 @@ parámetro. El trazador sí puede seguir una ruta literal. Si en el futuro se ne
 documentos de la raíz desde código de servidor, mantener el mismo patrón — una llamada literal por
 archivo, no una función genérica con el nombre como argumento.
 
-### 2026-08-25 — El razonamiento extendido de Sonnet 5 se come el presupuesto de `max_tokens`
+### 2026-08-27 — El razonamiento extendido de Sonnet 5 se come el presupuesto de `max_tokens`
 
 **Síntoma:** al llamar a `claude.messages.create()` sin tocar el parámetro `thinking`, la
 respuesta de la Fase 4 (redacción del plan, `lib/claude/plan.ts`) salía vacía o cortada a mitad de
@@ -300,7 +300,7 @@ en `app/api/chat/route.ts` (Fase 1-2, por el mismo riesgo con turnos más largos
 una llamada a Claude sí necesita razonar de verdad (no solo traducir), subir `max_tokens` con
 margen explícito para el `budget_tokens` del thinking, no confiar en el valor por defecto.
 
-### 2026-08-25 — vitest no resuelve el alias `@/*` sin configuración propia
+### 2026-08-27 — vitest no resuelve el alias `@/*` sin configuración propia
 
 **Síntoma:** al añadir un import `@/lib/...` sin mockear en un test (`@/lib/claude/plan`,
 `@/lib/motor/informe`), vitest fallaba con "Cannot find package '@/lib/...'" pese a que `tsc

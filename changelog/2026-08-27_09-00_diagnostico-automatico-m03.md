@@ -1,6 +1,6 @@
 # Diagnóstico y plan automáticos en el chat — M-03
 
-**Fecha:** 2026-08-25 21:00
+**Fecha:** 2026-08-27 09:00
 **Tipo:** Feature
 **Requisitos:** M-03
 

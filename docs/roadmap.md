@@ -50,7 +50,7 @@
       con el disclaimer reforzado — `M-03`. `app/api/chat/` detecta la ficha de cierre
       (`contieneFicha`), la parsea, calcula el informe con `calcularInforme()` y llama a Claude una
       segunda vez (`lib/claude/plan.ts`) solo para traducir esas cifras ya calculadas a la
-      estructura fija de §8 — nunca para recalcular nada. **Verificado en vivo** el 2026-08-25 con
+      estructura fija de §8 — nunca para recalcular nada. **Verificado en vivo** el 2026-08-27 con
       `ANTHROPIC_API_KEY` real: las 8 secciones salen completas y con el gating correcto (R4 y R10
       solo aparecieron porque el caso de prueba los disparaba), y cada cifra citada en el plan
       coincide exactamente con la que calculó el motor — sin alucinaciones. De paso, dos fallos
