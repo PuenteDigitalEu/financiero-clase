@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ChatBubble } from "./chat-bubble";
 import { ConsentScreen } from "./consent-screen";
@@ -25,6 +25,14 @@ export function ChatWindow() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const finalRef = useRef<HTMLDivElement>(null);
+
+  // Cada mensaje nuevo (o el indicador de "Escribiendo…") empuja el scroll hacia abajo — si no,
+  // la respuesta más reciente puede quedar fuera de la vista, especialmente en pantallas pequeñas
+  // o cuando la conversación ya lleva varias preguntas.
+  useEffect(() => {
+    finalRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [mensajes, cargando]);
 
   /**
    * `historialVisible` es exactamente lo que ya está (o va a estar) en pantalla — nunca incluye el
@@ -105,6 +113,7 @@ export function ChatWindow() {
         ))}
         {cargando && <p className="text-sm text-text-secondary">Escribiendo…</p>}
         {error && <p className="text-sm text-error">{error}</p>}
+        <div ref={finalRef} />
       </div>
 
       <form onSubmit={handleEnviar} className="flex gap-2 border-t border-surface p-4">
