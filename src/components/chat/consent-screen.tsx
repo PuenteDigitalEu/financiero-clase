@@ -11,10 +11,7 @@ interface ConsentScreenProps {
  */
 export function ConsentScreen({ onAceptar, cargando, error }: ConsentScreenProps) {
   return (
-    // h-full + overflow-y-auto propio: la página del chat clipa a la altura de la ventana
-    // (ver app/chat/page.tsx), así que si este contenido no cupiera en una pantalla pequeña,
-    // tiene que poder hacer scroll él solo — si no, quedaría cortado sin forma de llegar al botón.
-    <div className="mx-auto flex h-full w-full max-w-[560px] flex-col gap-6 overflow-y-auto px-6 py-16 text-center">
+    <div className="mx-auto flex w-full max-w-[560px] flex-col gap-6 px-6 py-16 text-center">
       <div className="rounded-2xl border border-surface bg-surface/60 px-6 py-6 text-left text-sm leading-relaxed text-text-primary">
         <h2 className="mb-3 text-base font-semibold text-text-primary">
           Antes de empezar, esto es lo que va a pasar
