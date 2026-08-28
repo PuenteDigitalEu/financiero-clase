@@ -5,11 +5,7 @@ import { useState } from "react";
 import { ChatBubble } from "./chat-bubble";
 import { ConsentScreen } from "./consent-screen";
 import { DisclosureBanner } from "./disclosure-banner";
-
-interface Mensaje {
-  role: "user" | "assistant";
-  content: string;
-}
+import { conRespuesta, mensajesParaApi, type Mensaje } from "./historial";
 
 /**
  * M-02 + M-06: entrevista guiada por chat, detrás del consentimiento de tratamiento de datos.
@@ -31,24 +27,27 @@ export function ChatWindow() {
   const [token, setToken] = useState<string | null>(null);
 
   /**
-   * `historialParaApi` es lo que se manda a Claude (incluye el "Hola" sintético del arranque);
-   * `mostrarDesde` es cuántos mensajes de ese historial ya estaban en pantalla antes de esta
-   * llamada — así el "Hola" que dispara la apertura nunca se renderiza como burbuja del visitante.
+   * `historialVisible` es exactamente lo que ya está (o va a estar) en pantalla — nunca incluye el
+   * "Hola" sintético del arranque, que se antepone aquí mismo solo para lo que se manda al
+   * servidor. Al terminar, la respuesta se añade SOBRE ese mismo historial (nunca lo sustituye):
+   * sustituirlo en vez de acumularlo era el bug real — a partir del tercer turno, el servidor
+   * dejaba de recibir el nombre/email dados en el bloque 0 y Claude, sin ese contexto, volvía a
+   * preguntarlo desde el principio (ver changelog).
    */
-  async function enviarTurno(tokenActivo: string, historialParaApi: Mensaje[], mostrarDesde: number) {
+  async function enviarTurno(tokenActivo: string, historialVisible: Mensaje[]) {
     setCargando(true);
     setError(null);
     try {
       const respuesta = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: tokenActivo, messages: historialParaApi }),
+        body: JSON.stringify({ token: tokenActivo, messages: mensajesParaApi(historialVisible) }),
       });
       const datos = await respuesta.json();
       if (!respuesta.ok) {
         throw new Error(datos.error ?? "Algo ha ido mal.");
       }
-      setMensajes([...historialParaApi.slice(mostrarDesde), datos.message]);
+      setMensajes(conRespuesta(historialVisible, datos.message));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Algo ha ido mal. Recarga e inténtalo de nuevo.");
     } finally {
@@ -71,7 +70,7 @@ export function ChatWindow() {
         throw new Error(datos.error ?? "No se pudo iniciar la conversación.");
       }
       setToken(datos.token as string);
-      void enviarTurno(datos.token as string, [{ role: "user", content: "Hola" }], 1);
+      void enviarTurno(datos.token as string, []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Algo ha ido mal. Recarga e inténtalo de nuevo.");
       setCargando(false);
@@ -83,13 +82,10 @@ export function ChatWindow() {
     const texto = entrada.trim();
     if (!texto || cargando || !token) return;
     const nuevoMensaje: Mensaje = { role: "user", content: texto };
-    const historial = [...mensajes, nuevoMensaje];
-    setMensajes(historial);
+    const historialVisible = [...mensajes, nuevoMensaje];
+    setMensajes(historialVisible);
     setEntrada("");
-    // El primer "Hola" no está en `mensajes` (se ocultó al empezar), así que hay que
-    // reconstruirlo delante del historial visible para que Claude siga viendo la conversación
-    // completa, aunque el visitante nunca la haya visto en pantalla.
-    void enviarTurno(token, [{ role: "user", content: "Hola" }, ...historial], historial.length + 1);
+    void enviarTurno(token, historialVisible);
   }
 
   if (!token) {
