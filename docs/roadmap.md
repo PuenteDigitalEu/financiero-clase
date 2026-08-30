@@ -29,12 +29,15 @@
       de cartera vs. de negocio, R8/R9) y aplica la línea roja de que ninguna propuesta ejecutable
       sale fuera de modo `completo` con flujo libre positivo — 87 tests, todos verificados
       ejecutando de verdad (`pnpm test`).
-- [~] Landing pública con presentación de la asesoría y el agente — `M-01`. Construida siguiendo
-      `docs/design-system.md` (paleta, tipografía Sora/Inter, tono). CTA de entrada a `/chat`
-      (placeholder hasta `M-02`). Verificado que compila, pasa lint y el servidor de desarrollo
-      sirve ambas rutas sin errores; **sin revisión visual en navegador real** — la extensión de
-      Chrome no estaba conectada en este entorno sin supervisión. Revisar visualmente antes de
-      dar `M-01` por cerrada del todo.
+- [x] Landing pública con presentación de la asesoría y el agente — `M-01`. Construida siguiendo
+      `docs/design-system.md` (paleta, tipografía Sora/Inter, tono). CTA de entrada a `/chat`.
+      Verificado que compila, pasa lint y el servidor de desarrollo sirve ambas rutas sin errores.
+      **Revisión visual completada el 2026-08-30**: en local con la extensión de Chrome (hero con
+      Sora en el `h1`, CTA naranja `#FF6B4A` que es un `<a href="/chat">` y navega de verdad a la
+      pantalla de consentimiento, disclaimer en hero y footer, secciones "Cómo funciona" y "Tus
+      datos, con cuidado", `[Nombre de la asesoría]` intacto como placeholder — correcto hasta que
+      se confirme la marca, sin overflow horizontal, breakpoints `sm:` presentes) y por el usuario
+      en producción (incluida la vista móvil real, sin incidencias).
 - [x] Chat de entrevista guiada, Fases 1-2 (`instrucciones-sistema.md`) integradas con Claude —
       `M-02`. `app/api/chat/` (sin estado en servidor: el cliente manda el historial completo en
       cada turno) + UI (`ChatBubble`, `DisclosureBanner`, `ChatWindow`). 10 tests con el cliente de
@@ -131,9 +134,10 @@ ningún alcance nuevo, todo `M-02`.
       cuadro de texto por definición y no depende de ninguna cadena de CSS entre archivos.
       **Confirmado en producción por el usuario** (2026-08-30). Changelog 2026-08-30.
 
-Estado tras esto: 148/148 tests, `build` y `tsc` limpios, árbol de git limpio. Sigue pendiente la
-revisión visual en navegador real de M-01/M-02/M-03/M-06 (Claude in Chrome requiere un plan que la
-cuenta de este usuario no tiene).
+Estado tras esto: 148/148 tests, `build` y `tsc` limpios, árbol de git limpio. La revisión visual
+de M-01 se completó el 2026-08-30 (extensión de Chrome en local + usuario en producción); M-02/M-03/
+M-06 ya se ejercieron de hecho en la prueba en producción del usuario, con los bugs que salieron ya
+corregidos arriba.
 
 ---
 
