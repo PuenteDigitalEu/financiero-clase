@@ -18,8 +18,8 @@ document.body.scrollHeight, behavior: "smooth" })` — que por definición inclu
 al ser lo último del documento. No depende de que ninguna cadena de alturas/`overflow` esté bien
 encajada entre varios archivos, que fue justo lo que falló en el segundo intento.
 
-Verificado: 148/148 tests, build y `tsc` limpios. Sin verificación visual en navegador (bloqueada,
-igual que el resto de la sesión) — pendiente de que el usuario lo confirme en producción.
+Verificado: 148/148 tests, build y `tsc` limpios. **Confirmado por el usuario en producción**
+(2026-08-30): el cuadro de texto ya se mantiene siempre visible tras cada pregunta nueva.
 
 ## Qué se modificó
 
