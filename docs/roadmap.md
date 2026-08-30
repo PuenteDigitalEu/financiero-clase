@@ -105,6 +105,38 @@ conversación manual.
 
 ---
 
+## Puesta en producción y estabilización (post-Fase 1)
+
+Con la Fase 1 cerrada, el proyecto pasó a producción. El trabajo desde entonces ha sido prepararlo
+para desplegar y corregir lo que solo apareció al probar la app real a través del navegador —
+ningún alcance nuevo, todo `M-02`.
+
+- [x] README reescrito al estado real (Fase 1 ya construida, no "implementación sin empezar") con
+      sección nueva de **Despliegue**: variables de entorno explicadas una a una, estructura real
+      de `src/`, pasos exactos de Vercel. El agente lo deja listo y explicado; el botón lo pulsa el
+      usuario. Changelog 2026-08-28.
+- [x] App desplegada en Vercel, en producción (2026-08-28).
+- [x] **Bug crítico en producción (`M-02`):** el chat perdía el historial a partir del tercer
+      turno — `ChatWindow` sustituía el historial visible en vez de acumularlo, así que el tercer
+      turno mandaba a `/api/chat` una conversación sin el nombre/email del bloque 0 y Claude los
+      volvía a pedir. Lo detectó el usuario probando la app desplegada con sus propios dedos: la
+      verificación por `curl` contra las APIs, aunque real, nunca ejerció la acumulación en el
+      navegador. Arreglo: lógica de acumulación extraída a `lib` puro (`src/components/chat/historial.ts`)
+      con test de regresión de 4 turnos. Changelog 2026-08-28.
+- [x] **Auto-scroll del chat (`M-02`)**, en tres iteraciones: (1) `scrollIntoView` sobre un
+      centinela dentro del área de mensajes — subía la última pregunta a la vista pero dejaba el
+      cuadro de texto cortado; (2) fijar la altura de la página con `h-dvh` + `overflow-hidden` —
+      no lo resolvió, revertido (`2516b37` / `4e60586`); (3) `window.scrollTo` a
+      `document.body.scrollHeight` — desplaza la página entera hasta su final real, que incluye el
+      cuadro de texto por definición y no depende de ninguna cadena de CSS entre archivos.
+      **Confirmado en producción por el usuario** (2026-08-30). Changelog 2026-08-30.
+
+Estado tras esto: 148/148 tests, `build` y `tsc` limpios, árbol de git limpio. Sigue pendiente la
+revisión visual en navegador real de M-01/M-02/M-03/M-06 (Claude in Chrome requiere un plan que la
+cuenta de este usuario no tiene).
+
+---
+
 ## Fase 2 — Mejora sobre validación
 
 - [ ] Panel de consulta para el asesor (`S-01`), si revisar los emails uno a uno se queda corto en
