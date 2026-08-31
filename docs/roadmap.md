@@ -141,6 +141,33 @@ corregidos arriba.
 
 ---
 
+## Vigilancia de mercado (M-09)
+
+Capa nueva montada **encima** del MVP, sin tocar el flujo del chat. Vigila movimientos de mercado y,
+cuando uno cruza el umbral de un perfil, registra un evento y una alerta por cliente afectado. Ficha:
+`docs/features/vigilancia-de-mercado.md` (**Verificada**).
+
+- [x] Migración `0002_alertas_de_mercado.sql` — 4 enums, 3 columnas nuevas, 5 tablas con los 3
+      `unique` de idempotencia, RLS (SELECT `es_asesor()`), 3 reglas sembradas. Escrita y **aplicada
+      contra el Supabase real** (2026-08-31, `apply_migration`). Changelog 2026-08-31.
+- [x] `src/lib/alertas/` — `detectarEventos` y `clientesAfectados` (puras) + `mensajeInterno`
+      (descriptivo, nunca recomienda) + `DESCARGO_LEGAL`. 13 tests vitest.
+- [x] `scripts/revision.ts` — descarga los cierres del S&P 500 (Yahoo Finance, sin clave), guarda en
+      `observaciones_mercado` (`on conflict do nothing`), decide con la lógica importada, registra
+      evento + alertas por los `unique`, imprime resumen JSON.
+- [x] Programación: GitHub Actions (`.github/workflows/revision-diaria.yml`), cron diario L-V tras el
+      cierre de EE. UU. Elegido frente a Vercel Cron por no exponer ninguna ruta HTTP.
+- [x] **Ejecución de extremo a extremo** contra el Supabase real (2026-08-31): 23 cierres del S&P
+      500 insertados en `observaciones_mercado`, 0 eventos (ninguna regla cruzó su umbral), correo
+      apagado, salida limpia. Verificación estructural aparte con `scripts/verificar-revision.mjs`
+      (PGlite). Con esto la ficha pasa a **Verificada**.
+- [ ] **Correo al cliente:** apagado a propósito (`REVISION_ENVIAR_CORREO_CLIENTE=false`). Para
+      activarlo hace falta un dominio verificado en Resend. Pendiente de decidir cuándo.
+- [ ] Poner los secrets `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en el repo de GitHub para que
+      el workflow diario pueda ejecutarse (la corrida a mano ya funcionó).
+
+---
+
 ## Fase 2 — Mejora sobre validación
 
 - [ ] Panel de consulta para el asesor (`S-01`), si revisar los emails uno a uno se queda corto en

@@ -79,15 +79,20 @@ src/
 ├── lib/
 │   ├── supabase/               → Cliente Supabase (browser y server) y helpers
 │   ├── claude/                 → Cliente Anthropic, carga de system prompts
-│   └── motor/                  → Puerto en código de instrucciones-motor.md + docs/criterio/reglas-recomendacion.md:
-│                                  flujo libre, % camino recorrido, proyección, gap, cartera ponderada,
-│                                  probabilidad Monte Carlo (R10). Ningún cálculo numérico se le pide
-│                                  al modelo de lenguaje (ver "Decisiones técnicas relevantes").
+│   ├── motor/                  → Puerto en código de instrucciones-motor.md + docs/criterio/reglas-recomendacion.md:
+│   │                              flujo libre, % camino recorrido, proyección, gap, cartera ponderada,
+│   │                              probabilidad Monte Carlo (R10). Ningún cálculo numérico se le pide
+│   │                              al modelo de lenguaje (ver "Decisiones técnicas relevantes").
+│   └── alertas/                → M-09. Lógica pura de la vigilancia de mercado: detectarEventos,
+│                                  clientesAfectados, mensajeInterno (nunca recomienda). Sin red, BD ni IA.
 └── types/                      → Tipos compartidos (ficha, diagnóstico, conversación)
 
 docs/             → documentación del proyecto (ver sección anterior)
 docs/features/    → fichas de las features acordadas, con su tabla de cobertura
 supabase/migrations/ → migraciones SQL versionadas (ver docs/data-model.md → "Migraciones")
+scripts/          → scripts de verificación (cobertura, persistencia, revisión) y `revision.ts`
+                    (M-09: revisión diaria de mercado, se ejecuta con `pnpm revision` / GitHub Actions)
+.github/workflows/ → `cobertura.yml` (CI de cobertura) y `revision-diaria.yml` (cron de M-09)
 changelog/        → registro de cambios (ver protocolo más abajo)
 mejoras/          → ideas futuras no implementadas
 ```

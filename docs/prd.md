@@ -110,6 +110,20 @@ de partida para la siguiente conversación con esa persona — no como sustituto
   *Negativo:* dado un visitante dentro del umbral, cuando usa el chat con normalidad, entonces
   nunca ve ningún efecto de este límite.
 
+- **[M-09] Vigilancia de mercado y alerta sobre el plan** — Dado un cliente con un análisis vigente
+  (no en modo `suspendido`), cuando un índice de referencia de una clase de activo se mueve más allá
+  del umbral definido para el perfil de ese cliente dentro de la ventana de días de la regla,
+  entonces una revisión diaria registra un evento de mercado y una alerta para ese cliente, de forma
+  idempotente: reejecutar la revisión sobre los mismos datos no crea eventos ni alertas duplicados
+  (constraints `unique` en `observaciones_mercado`, `eventos_mercado` y `alertas`). El texto que
+  acompaña a la alerta describe el hecho (porcentaje y fechas) y nunca recomienda comprar ni vender.
+  *Negativo:* dado un cliente sin análisis, con el análisis en modo `suspendido`, o de un perfil
+  distinto al de la regla cuando la regla apunta a un perfil concreto, cuando se detecta el evento,
+  entonces no se le crea ninguna alerta.
+  *Nota de alcance:* el aviso por correo al propio cliente queda fuera de este requisito de momento
+  (decisión 2026-08-31); la revisión registra la alerta pero no le escribe. El aviso al asesor sigue
+  siendo el de `M-05` (cierre de conversación), no forma parte de esta vigilancia.
+
 ### SHOULD
 - **[S-01] Panel de consulta para el asesor** — Dado que el asesor quiere revisar casos pasados,
   cuando accede al panel, entonces ve el listado de conversaciones completadas con su ficha y

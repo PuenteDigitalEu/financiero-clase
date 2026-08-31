@@ -23,6 +23,13 @@ autenticación"). Estar en `asesores` (más abajo) es lo que da acceso al panel 
 `'confirmado' | 'estimado' | 'pendiente'` — reproduce la etiqueta que ya usa
 `instrucciones-sistema.md` para cada dato de la ficha.
 
+### Enums de la capa de vigilancia de mercado (migración 0002)
+- `clase_activo` — `'liquidez' | 'renta_fija' | 'renta_variable' | 'oro'`
+- `direccion_movimiento` — `'caida' | 'subida'`
+- `estado_alerta` — `'nueva' | 'vista' | 'descartada'`
+- `banda_probabilidad` — `'alta' | 'razonable' | 'fragil' | 'baja'` — mismos valores que el `check`
+  inline de `informes.mc_banda`, pero como enum reutilizable; `mc_banda` no se toca y conviven.
+
 ### asesores
 Lista blanca de quién puede ver el panel (`S-01`). Estar en esta tabla **es** el permiso — no basta
 con tener una cuenta de Supabase Auth válida.
@@ -45,6 +52,7 @@ duplicar el lead (email normalizado a minúsculas antes de insertar).
 | nombre | text | — |
 | email | text, único | — |
 | creado_en | timestamptz | — |
+| avisar_cliente | boolean, **not null**, default `false` | Añadida en 0002. Si es `true`, la revisión diaria (`scripts/revision.ts`) le manda un correo al cliente por cada alerta nueva que le afecte; si es `false`, la alerta se registra pero no se le escribe |
 
 ### conversaciones
 Una fila por cada visitante que abre el chat, exista o no llegue a completarlo.
@@ -171,6 +179,8 @@ la misma ficha, se versiona con una fila nueva en vez de sobrescribir, igual que
 | mc_percentil_optimista | numeric, nullable | Percentil p90 |
 | mc_probabilidad_cumplimiento | numeric, nullable | Fracción 0–1 — soporta `M-07` |
 | mc_banda | text — `'alta' \| 'razonable' \| 'fragil' \| 'baja'`, nullable | Banda de R10 derivada de `mc_probabilidad_cumplimiento` |
+| probabilidad | numeric, nullable | Añadida en 0002. Probabilidad de cumplimiento del plan a efectos de la capa de alertas — separada de `mc_probabilidad_cumplimiento` (Monte Carlo), que no se toca |
+| banda | `banda_probabilidad`, nullable | Añadida en 0002. Banda cualitativa asociada a `probabilidad`; enum, no `text`+`check` como `mc_banda` |
 | contenido | jsonb | Estructura completa del informe (Partes A/B/C de `instrucciones-motor.md` §7: diagnóstico, propuesta preliminar, trazabilidad y pendientes) — uso interno, nunca se muestra tal cual al visitante |
 | pendientes_reunion | jsonb | Array de strings — casos borde o datos pendientes que quedan para que el asesor los trate en la reunión |
 | version_motor | text | Versión de `lib/motor/` usada para este cálculo |
@@ -209,6 +219,96 @@ Registro del aviso automático (`M-05` del PRD), para poder confirmar que se env
 
 ---
 
+## Capa de vigilancia de mercado (migración 0002)
+
+Capa montada **encima** del esquema inicial, sin tocar ninguna tabla previa. La lógica de decisión
+vive en `src/lib/alertas/` (funciones puras) y el proceso diario que la conecta con el mundo real
+en `scripts/revision.ts`. El diseño de estas cinco tablas gira alrededor de tres `UNIQUE` que hacen
+**idempotente** todo el pipeline: reejecutar la revisión no duplica observaciones, ni eventos, ni
+alertas, ni reenvía correos.
+
+### observaciones_mercado
+Serie temporal cruda: un nivel por clase de activo y fecha. La ingesta (hoy: cierres del S&P 500 vía
+la API pública de Yahoo Finance) es idempotente por el `UNIQUE (clase, fecha)` — reingestar la misma
+fuente no duplica la serie.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | uuid, PK | — |
+| clase | `clase_activo` | — |
+| fecha | date | ISO `AAAA-MM-DD` |
+| nivel | numeric | Nivel/cierre del índice en esa fecha |
+| fuente | text | Origen del dato, p. ej. `yahoo-finance:SPY` |
+| creado_en | timestamptz | — |
+| — | **UNIQUE (clase, fecha)** | Una sola lectura por clase de activo y día |
+
+### reglas_alerta
+Catálogo de condiciones que se vigilan. `perfil` NULL = la regla aplica a todos los perfiles.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | uuid, PK | — |
+| nombre | text | — |
+| clase | `clase_activo` | — |
+| direccion | `direccion_movimiento` | — |
+| umbral | numeric | En **tanto por uno**: `0.03` = 3 % |
+| ventana_dias | int | Nº de días de la ventana que se compara |
+| perfil | text — `'conservador' \| 'moderado' \| 'dinamico'`, nullable | `check (perfil is null or perfil in (...))`. NULL = aplica a todos |
+| activa | boolean, default `true` | Solo las activas se evalúan |
+| creado_en | timestamptz | — |
+
+### eventos_mercado
+Cada vez que una regla se cumple sobre la serie se registra un evento. El `UNIQUE (regla_id, hasta)`
+hace idempotente la detección: recalcular la misma ventana (mismo día de cierre) no crea eventos
+repetidos para esa regla.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | uuid, PK | — |
+| regla_id | uuid, FK → reglas_alerta | — |
+| clase | `clase_activo` | Denormalizada de la regla, para consulta directa |
+| variacion | numeric | Variación observada en la ventana, en tanto por uno **con signo** (negativa = caída) |
+| desde | date | Observación del inicio de la ventana comparada |
+| hasta | date | Última observación de la serie |
+| creado_en | timestamptz | — |
+| — | **UNIQUE (regla_id, hasta)** | Un evento por regla y fecha de cierre de ventana |
+
+### alertas
+Reparto de un evento a los clientes afectados. El `UNIQUE (evento_id, cliente_id)` garantiza una
+alerta como máximo por cliente y evento: el reparto puede re-ejecutarse sin duplicar avisos, y el
+correo al cliente se manda **solo** por las filas recién insertadas.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | uuid, PK | — |
+| evento_id | uuid, FK → eventos_mercado | — |
+| cliente_id | uuid, FK → clientes | — |
+| analisis_id | uuid, FK → informes, nullable | Informe contra el que se contrasta el movimiento, si lo hay |
+| estado | `estado_alerta`, default `'nueva'` | — |
+| mensaje | text, nullable | Frase descriptiva generada por `src/lib/alertas/redactar.ts` |
+| avisado_cliente_en | timestamptz, nullable | Se rellena al enviar el correo al cliente; null si no se envió |
+| creado_en | timestamptz | — |
+| — | **UNIQUE (evento_id, cliente_id)** | Una alerta por cliente y evento |
+
+Índices: `alertas_cliente_id_idx (cliente_id)`, `alertas_analisis_id_idx (analisis_id)`.
+
+### posiciones
+Cartera declarada de cada cliente, para saber a quién afecta un evento de mercado.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | uuid, PK | — |
+| cliente_id | uuid, FK → clientes | — |
+| clase | `clase_activo` | — |
+| activo | text | Nombre del activo |
+| ticker | text, nullable | — |
+| importe | numeric | Importe invertido en esa posición |
+| creado_en | timestamptz | — |
+
+Índice: `posiciones_cliente_id_idx (cliente_id)`.
+
+---
+
 ## Relaciones entre entidades
 
 ```mermaid
@@ -219,7 +319,16 @@ erDiagram
   fichas ||--o| informes : "analiza"
   informes ||--o| planes : "traduce"
   conversaciones ||--o{ notificaciones_asesor : "dispara"
+
+  reglas_alerta ||--o{ eventos_mercado : "dispara"
+  eventos_mercado ||--o{ alertas : "reparte"
+  clientes ||--o{ alertas : "recibe"
+  informes ||--o{ alertas : "contrasta"
+  clientes ||--o{ posiciones : "declara"
 ```
+
+`observaciones_mercado` no tiene FK: es una serie temporal cruda que `scripts/revision.ts` cruza con
+`reglas_alerta` en código, no por relación.
 
 ---
 
@@ -231,26 +340,30 @@ clave de servicio (`SUPABASE_SERVICE_ROLE_KEY`), que no pasa por RLS y valida el
 conversación en código, no en la base de datos. La clave pública (`anon`) que llega al navegador no
 necesita ningún permiso sobre estas tablas.
 
-RLS **activado** en las nueve tablas (`asesores`, `clientes`, `conversaciones`, `fichas`, `deudas`,
-`informes`, `planes`, `notificaciones_asesor`, `limites_uso`), sin ninguna policy para el rol `anon`
-— deniega por defecto.
+RLS **activado** en las catorce tablas — las nueve de 001 (`asesores`, `clientes`, `conversaciones`,
+`fichas`, `deudas`, `informes`, `planes`, `notificaciones_asesor`, `limites_uso`) y las cinco de
+0002 (`observaciones_mercado`, `reglas_alerta`, `eventos_mercado`, `alertas`, `posiciones`) — sin
+ninguna policy para el rol `anon` — deniega por defecto.
 
 - **SELECT:** permitido para el rol `authenticated`, condicionado a que exista una fila propia en
   `asesores` (función `es_asesor()`, `security definer`) — no basta con estar autenticado, hay que
-  estar en la lista blanca. Necesario para el panel `S-01`.
+  estar en la lista blanca. Necesario para el panel `S-01`. Las cinco tablas de 0002 llevan la misma
+  policy `..._select` con `es_asesor()`.
 - **INSERT / UPDATE / DELETE:** ninguna policy para `authenticated` ni `anon`. Todas las escrituras
-  vienen del backend con la clave de servicio, que es quien garantiza que una ficha no se modifica a
-  mano después de calcular el plan.
+  vienen del backend con la clave de servicio — `app/api/chat/` para el flujo del chat,
+  `scripts/revision.ts` para la revisión diaria de mercado.
 
 ---
 
 ## Migraciones
 
-Escrita, verificada localmente y **aplicada contra el proyecto Supabase real** (2026-08-27).
+Ambas migraciones están **aplicadas contra el proyecto Supabase real** (001 el 2026-08-27, 0002 el
+2026-08-31).
 
 | Fecha | Archivo | Descripción |
 |-------|---------|-------------|
 | 2026-08-25 (escrita), 2026-08-27 (aplicada) | `supabase/migrations/001_esquema_inicial.sql` | Crea el enum `dato_estado` y las tablas `asesores`, `clientes`, `conversaciones`, `limites_uso`, `fichas`, `deudas`, `informes`, `planes`, `notificaciones_asesor`, con sus RLS y la función `es_asesor()` |
+| 2026-08-31 (escrita y aplicada) | `supabase/migrations/0002_alertas_de_mercado.sql` | Capa de vigilancia de mercado. Enums `clase_activo`, `direccion_movimiento`, `estado_alerta`, `banda_probabilidad`; columnas `clientes.avisar_cliente`, `informes.probabilidad`, `informes.banda`; tablas `observaciones_mercado`, `reglas_alerta`, `eventos_mercado`, `alertas`, `posiciones` con sus tres `UNIQUE` de idempotencia, RLS (SELECT `es_asesor()`) y tres reglas sembradas |
 
 **Verificación local:** ejecutada contra Postgres real vía PGlite (WASM), con roles
 `authenticated`/`anon`/`service_role` y un `auth.users`/`auth.uid()` mínimos simulados (Supabase los
@@ -260,17 +373,33 @@ tablas; inserción de una fila completa por toda la cadena de FKs (`clientes` �
 `ingresos_estabilidad`) rechazan valores fuera de lista; `conversaciones.consentimiento_en not null`
 impide crear una conversación sin consentimiento (`M-06`).
 
-**Aplicada contra Supabase real (2026-08-27):** el usuario la ejecutó desde el SQL Editor del panel,
-con las credenciales reales ya puestas en `.env.local`. El proyecto tenía un esquema previo
+**001 aplicada contra Supabase real (2026-08-27):** el usuario la ejecutó desde el SQL Editor del
+panel, con las credenciales reales ya puestas en `.env.local`. El proyecto tenía un esquema previo
 completamente distinto (`entrevistas`/`analisis`/`mensajes`, de una versión anterior del diseño) —
 confirmado vacío y sustituido por este, tras limpiarlo. Verificado después en vivo: las 9 tablas y
 sus columnas exactas existen (vía el esquema OpenAPI de PostgREST), y un ciclo completo de escritura
 (conversación → token → cierre con cliente/ficha/deudas/informe/plan) funciona igual que contra
 PGlite (ver `docs/features/consentimiento-y-persistencia.md`, Verificada).
 
+**0002 aplicada contra Supabase real (2026-08-31)** vía el MCP de Supabase (`apply_migration`, que la
+registra en el historial: `20260831093650_alertas_de_mercado`). Verificado después: las 5 tablas
+existen con sus columnas y enums, los 3 `UNIQUE` de idempotencia están, RLS activado en las cinco con
+policy SELECT `es_asesor()` y ninguna para `anon`, `clientes.avisar_cliente` / `informes.probabilidad`
+/ `informes.banda` presentes, y las 3 reglas sembradas (umbral 0.03/0.04/0.06, ventana 5 días,
+perfiles conservador/moderado/dinamico).
+
 ---
 
 ## Datos seed
 
-Ninguno necesario: no hay catálogos, roles ni configuración inicial que precargar. El único usuario
-(el asesor) se crea directamente en Supabase Auth, no por seed.
+**Migración 001:** ninguno. No hay catálogos, roles ni configuración inicial que precargar; el único
+usuario (el asesor) se crea directamente en Supabase Auth.
+
+**Migración 0002:** tres filas en `reglas_alerta` — caída de renta variable a 5 días, un umbral por
+perfil:
+
+| nombre | clase | direccion | umbral | ventana_dias | perfil |
+|--------|-------|-----------|--------|--------------|--------|
+| Caída renta variable 5d — conservador | renta_variable | caida | 0.03 | 5 | conservador |
+| Caída renta variable 5d — moderado | renta_variable | caida | 0.04 | 5 | moderado |
+| Caída renta variable 5d — dinamico | renta_variable | caida | 0.06 | 5 | dinamico |
