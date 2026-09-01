@@ -106,6 +106,25 @@ a mitad camino, que el diagnóstico automático que recibe es coherente y útil 
 previo del asesor, y que a ti (el asesor) el par ficha+diagnóstico te ahorra de verdad la primera
 conversación manual.
 
+**Qué queda para cerrar la validación** (a 2026-09-01):
+
+- [ ] **Recorrido completo del asesor en producción**, de principio a fin: aceptar el
+      consentimiento → responder la entrevista entera → ver el diagnóstico y el plan en el chat →
+      recibir el email de aviso → comprobar que la conversación queda `completada` en Supabase con
+      su ficha, informe y plan.
+- [ ] **Enviar el enlace genérico a las primeras 5-10 personas** y dejar pasar 1-2 semanas antes de
+      revisar nada — con menos datos los porcentajes no dicen nada.
+- [ ] **Revisar con los datos reales:** tasa de abandono y en qué punto se caen, coherencia y
+      utilidad de los diagnósticos automáticos, y si el par ficha+diagnóstico ahorra la primera
+      llamada. Para lo del abandono hay 3 consultas SQL preparadas (embudo desde el consentimiento,
+      distribución por `turnos_totales`, comparativa completadas vs abandonadas) — entregadas el
+      2026-09-01. No hay tabla de mensajes, así que el "bloque" de abandono se aproxima por número
+      de turnos y "abandonada" se toma como "no completada y fría >2 h".
+
+Hecho ya de la preparación: variables de entorno de producción verificadas (2026-08-31), revisión
+visual de M-01 (2026-08-30), y el fix del cierre cuando la edad venía con decimales (2026-09-01,
+changelog).
+
 ---
 
 ## Puesta en producción y estabilización (post-Fase 1)
