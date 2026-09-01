@@ -1,0 +1,11 @@
+# Config mínima de la CLI de Supabase. El resto de secciones toman sus valores por defecto.
+# Hasta ahora las migraciones se aplicaron por el SQL Editor / MCP; esto se añade para poder
+# desplegar la Edge Function `revision-mercado` con la CLI.
+
+project_id = "ekuxwmktzasyxvziijdz"
+
+[functions.revision-mercado]
+# La función NO usa el login de Supabase: se protege con su propio secreto en la cabecera
+# Authorization (REVISION_SECRET), que comprueba el propio código. Por eso se desactiva la
+# verificación de JWT de la plataforma.
+verify_jwt = false

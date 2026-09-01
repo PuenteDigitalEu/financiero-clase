@@ -91,8 +91,12 @@ docs/             → documentación del proyecto (ver sección anterior)
 docs/features/    → fichas de las features acordadas, con su tabla de cobertura
 supabase/migrations/ → migraciones SQL versionadas (ver docs/data-model.md → "Migraciones")
 scripts/          → scripts de verificación (cobertura, persistencia, revisión) y `revision.ts`
-                    (M-09: revisión diaria de mercado, se ejecuta con `pnpm revision` / GitHub Actions)
-.github/workflows/ → `cobertura.yml` (CI de cobertura) y `revision-diaria.yml` (cron de M-09)
+                    (M-09: envoltorio Node de la revisión diaria; la lógica está en
+                    src/lib/alertas/revision-core.ts, compartida con la Edge Function)
+supabase/functions/ → Edge Functions (Deno). `revision-mercado/` = revisión diaria de M-09,
+                      disparada por pg_cron (ver docs/architecture.md → "Estrategia de despliegue")
+.github/workflows/ → `cobertura.yml` (CI de cobertura). `revision-diaria.yml` (cron de M-09) queda
+                     obsoleto en cuanto pg_cron esté verificado
 changelog/        → registro de cambios (ver protocolo más abajo)
 mejoras/          → ideas futuras no implementadas
 ```
@@ -187,6 +191,26 @@ Variables de entorno necesarias (ver `.env.example`): `NEXT_PUBLIC_SUPABASE_URL`
 código no publica ni ejecuta despliegues por su cuenta (ver "Límites de ejecución" en `CLAUDE.md`):
 deja el proyecto listo para `vercel deploy` o el push a la rama conectada, y explica el paso antes
 de que el usuario lo ejecute.
+
+### Revisión diaria de mercado (M-09) — Edge Function + pg_cron
+
+La revisión diaria (`src/lib/alertas/revision-core.ts`) se ejecuta como **Supabase Edge Function**
+(`supabase/functions/revision-mercado/`, Deno), disparada por **`pg_cron`** dentro de Postgres, que
+llama a la URL de la función con `pg_net`. Se eligió frente a GitHub Actions y a una ruta en la app
+Next porque no hace falta ninguna app desplegada: `pg_cron` solo sabe llamar a una URL, y la Edge
+Function es esa URL sin nada más que mantener.
+
+- La lógica **no se duplica**: `revision-core.ts` es agnóstico del entorno (recibe el cliente de
+  Supabase y la config ya montados, devuelve el resumen). Lo usan dos envoltorios finos:
+  `scripts/revision.ts` (Node/tsx, para ejecutarla a mano) y `supabase/functions/revision-mercado/`
+  (Deno). Los imports de `src/lib/alertas/` llevan extensión `.ts` porque Deno la exige
+  (`allowImportingTsExtensions` en `tsconfig.json`; `supabase/functions/` queda fuera del `tsc` y
+  del eslint del proyecto).
+- **Autorización:** la función no usa el login de Supabase (`verify_jwt = false`). El cron manda un
+  secreto propio, `REVISION_SECRET`, en `Authorization: Bearer …`, guardado en el Vault de Supabase
+  para no dejarlo en claro en `cron.job`.
+- Pasos de despliegue y el SQL del cron: `supabase/functions/revision-mercado/README.md`.
+- Sustituye a `.github/workflows/revision-diaria.yml`, que se retira cuando el cron esté verificado.
 
 ---
 

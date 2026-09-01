@@ -8,7 +8,7 @@ import type {
   EventoDetectado,
   Observacion,
   ReglaAlerta,
-} from './umbrales';
+} from './umbrales.ts';
 
 /**
  * Fecha ISO 'AAAA-MM-DD' → número de días desde época, en UTC. Solo aritmética de calendario,

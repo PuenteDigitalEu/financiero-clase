@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { clientesAfectados, detectarEventos } from './evaluar';
-import { mensajeInterno } from './redactar';
+import { clientesAfectados, detectarEventos } from './evaluar.ts';
+import { mensajeInterno } from './redactar.ts';
 import type {
   ClienteConPlan,
   ModoAnalisis,
   Observacion,
   PerfilRiesgo,
   ReglaAlerta,
-} from './umbrales';
+} from './umbrales.ts';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 let contador = 0;

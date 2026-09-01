@@ -4,7 +4,7 @@
  * adjunta aparte, no lo genera esta función.
  */
 
-import type { ClaseActivo, EventoDetectado } from './umbrales';
+import type { ClaseActivo, EventoDetectado } from './umbrales.ts';
 
 const SUJETO: Record<ClaseActivo, string> = {
   liquidez: 'La liquidez',

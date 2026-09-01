@@ -171,19 +171,27 @@ cuando uno cruza el umbral de un perfil, registra un evento y una alerta por cli
       contra el Supabase real** (2026-08-31, `apply_migration`). Changelog 2026-08-31.
 - [x] `src/lib/alertas/` — `detectarEventos` y `clientesAfectados` (puras) + `mensajeInterno`
       (descriptivo, nunca recomienda) + `DESCARGO_LEGAL`. 13 tests vitest.
-- [x] `scripts/revision.ts` — descarga los cierres del S&P 500 (Yahoo Finance, sin clave), guarda en
-      `observaciones_mercado` (`on conflict do nothing`), decide con la lógica importada, registra
-      evento + alertas por los `unique`, imprime resumen JSON.
-- [x] Programación: GitHub Actions (`.github/workflows/revision-diaria.yml`), cron diario L-V tras el
-      cierre de EE. UU. Elegido frente a Vercel Cron por no exponer ninguna ruta HTTP.
-- [x] **Ejecución de extremo a extremo** contra el Supabase real (2026-08-31): 23 cierres del S&P
-      500 insertados en `observaciones_mercado`, 0 eventos (ninguna regla cruzó su umbral), correo
-      apagado, salida limpia. Verificación estructural aparte con `scripts/verificar-revision.mjs`
-      (PGlite). Con esto la ficha pasa a **Verificada**.
+- [x] `src/lib/alertas/revision-core.ts` — el cuerpo de la revisión, agnóstico del entorno:
+      descarga los cierres del S&P 500 (Yahoo Finance, sin clave), guarda en `observaciones_mercado`
+      (`on conflict do nothing`), decide con la lógica importada, registra evento + alertas por los
+      `unique`, devuelve el resumen JSON. Envoltorios finos: `scripts/revision.ts` (Node) y la Edge
+      Function (Deno). Sin duplicar lógica.
+- [x] **Ejecución de extremo a extremo** contra el Supabase real (2026-08-31, y de nuevo tras el
+      refactor el 2026-09-01): cierres del S&P 500 insertados, 0 eventos en día tranquilo, y en una
+      prueba con caída sintética −7,49% → 3 eventos + 2 alertas por perfil, idempotente en la 2ª
+      pasada. Verificación estructural aparte con `scripts/verificar-revision.mjs` (PGlite).
+- [x] Programación: **Supabase Edge Function + `pg_cron`** (`supabase/functions/revision-mercado/`),
+      cron diario L-V tras el cierre de EE. UU. `pg_cron` llama a la URL de la función con `pg_net`,
+      autorizada por un secreto propio (`REVISION_SECRET`) en la cabecera `Authorization`, no por el
+      login de un usuario. Reemplaza la decisión anterior de GitHub Actions. Changelog 2026-09-01.
+- [ ] **Desplegar la Edge Function y dar de alta el `pg_cron`** — pasos operativos del usuario
+      (`supabase functions deploy` + el SQL del cron), en
+      `supabase/functions/revision-mercado/README.md`. Requiere instalar la CLI de Supabase (no
+      estaba en el repo).
+- [ ] Una vez el `pg_cron` esté verificado: **retirar `.github/workflows/revision-diaria.yml`** y
+      sus secrets `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` del repo de GitHub.
 - [ ] **Correo al cliente:** apagado a propósito (`REVISION_ENVIAR_CORREO_CLIENTE=false`). Para
       activarlo hace falta un dominio verificado en Resend. Pendiente de decidir cuándo.
-- [ ] Poner los secrets `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en el repo de GitHub para que
-      el workflow diario pueda ejecutarse (la corrida a mano ya funcionó).
 
 ---
 
