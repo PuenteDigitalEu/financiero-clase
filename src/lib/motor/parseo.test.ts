@@ -125,6 +125,21 @@ describe('parsearFicha', () => {
     expect(anomalias.some((a) => a.includes('ingresos_netos_mensual'))).toBe(true);
   });
 
+  it('edad con decimales ("59 y medio" → 59.5) se redondea a entero + anomalía', () => {
+    const texto = FICHA_COMPLETA.replace('edad: 40 [confirmado]', 'edad: 59.5 [confirmado]');
+    const { ficha, anomalias } = parsearFicha(texto);
+    expect(ficha.edad).toEqual({ valor: 60, etiqueta: 'confirmado' });
+    expect(Number.isInteger(ficha.edad.valor)).toBe(true);
+    expect(anomalias.some((a) => a.includes('edad') && a.includes('decimales'))).toBe(true);
+  });
+
+  it('edad y personas_a_cargo enteras se dejan tal cual, sin anomalía', () => {
+    const { ficha, anomalias } = parsearFicha(FICHA_COMPLETA);
+    expect(ficha.edad).toEqual({ valor: 40, etiqueta: 'confirmado' });
+    expect(ficha.personasACargo).toEqual({ valor: 0, etiqueta: 'confirmado' });
+    expect(anomalias.some((a) => a.includes('decimales'))).toBe(false);
+  });
+
   it('fecha_entrevista ausente → null + anomalía (nunca se adivina la fecha)', () => {
     const texto = FICHA_COMPLETA.replace('fecha_entrevista: 2026-08-25\n', '');
     const { ficha, anomalias } = parsearFicha(texto);

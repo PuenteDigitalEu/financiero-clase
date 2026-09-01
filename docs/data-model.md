@@ -124,9 +124,9 @@ aquí).
 | riesgo_comportamiento_real_estado | dato_estado | — |
 | riesgo_perfil_derivado | text — `'conservador' \| 'moderado' \| 'dinamico'`, nullable | Clasificado por la Fase 2 (agente), no por `lib/motor/`: interpretar texto libre no es un cálculo determinista (regla de `plantilla-entrevista.md` bloque 7, R3/C6 de `reglas-recomendacion.md`) |
 | riesgo_perfil_derivado_estado | dato_estado | — |
-| edad | int, nullable | — |
+| edad | int, nullable | `parseo.ts` (`datoEntero`) redondea al entero si el agente devuelve un decimal (p. ej. "59 y medio" → 59.5 → 60) y lo anota como anomalía — la columna es `integer` y Postgres rechazaría el decimal |
 | edad_estado | dato_estado | — |
-| personas_a_cargo | int, nullable | — |
+| personas_a_cargo | int, nullable | mismo tratamiento de entero que `edad` |
 | personas_a_cargo_estado | dato_estado | — |
 | situacion_laboral | text, nullable | — |
 | situacion_laboral_estado | dato_estado | — |

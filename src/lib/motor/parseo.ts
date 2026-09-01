@@ -80,6 +80,20 @@ function datoNumero(campos: Map<string, Campo>, clave: string, anomalias: string
   return { valor: numero, etiqueta: texto.etiqueta };
 }
 
+/**
+ * Como `datoNumero`, pero para los campos que el modelo de datos guarda como `integer`
+ * (`edad`, `personas_a_cargo`). Si el valor trae decimales —p. ej. "59 y medio" que el agente
+ * traduce a `59.5`— se redondea al entero más cercano y se anota como anomalía. Nunca se deja
+ * pasar un decimal: la columna `integer` de Postgres lo rechazaría al guardar la ficha.
+ */
+function datoEntero(campos: Map<string, Campo>, clave: string, anomalias: string[]): Dato<number> {
+  const dato = datoNumero(campos, clave, anomalias);
+  if (dato.valor === null || Number.isInteger(dato.valor)) return dato;
+  const redondeado = Math.round(dato.valor);
+  anomalias.push(`"${clave}" venía con decimales (${dato.valor}); se redondea a ${redondeado}`);
+  return { valor: redondeado, etiqueta: dato.etiqueta };
+}
+
 function datoEnum<T extends string>(
   campos: Map<string, Campo>,
   clave: string,
@@ -203,8 +217,8 @@ export function parsearFicha(texto: string): ResultadoParseo {
       ['conservador', 'moderado', 'dinamico'] as const,
       anomalias,
     ),
-    edad: datoNumero(campos, 'edad', anomalias),
-    personasACargo: datoNumero(campos, 'personas_a_cargo', anomalias),
+    edad: datoEntero(campos, 'edad', anomalias),
+    personasACargo: datoEntero(campos, 'personas_a_cargo', anomalias),
     situacionLaboral: datoTexto(campos, 'situacion_laboral', anomalias),
   };
 
