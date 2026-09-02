@@ -230,9 +230,69 @@ export function parsearFicha(texto: string): ResultadoParseo {
  * pregunta normal de la entrevista): busca dos claves del contrato que no aparecen nunca sueltas
  * en una pregunta.
  */
+/**
+ * Claves fijas del contrato de cierre de `instrucciones-sistema.md` (las que no se repiten; las
+ * `deuda_N_*` son variables y no cuentan). Un mensaje de la fase de entrevista —una pregunta o una
+ * recapitulación parcial— no llega ni de lejos a tener todas estas líneas.
+ */
+const CLAVES_FICHA = [
+  'nombre',
+  'email',
+  'fecha_entrevista',
+  'ingresos_netos_mensual',
+  'ingresos_estabilidad',
+  'gastos_fijos_mensual',
+  'deudas_numero',
+  'deudas_interes_alto_declarado',
+  'patrimonio_liquido',
+  'patrimonio_invertido',
+  'patrimonio_distribucion',
+  'aportacion_mensual_actual',
+  'colchon_meses',
+  'objetivo_proposito',
+  'objetivo_importe',
+  'objetivo_plazo_anios',
+  'riesgo_tolerancia_declarada',
+  'riesgo_comportamiento_real',
+  'riesgo_perfil_derivado',
+  'edad',
+  'personas_a_cargo',
+  'situacion_laboral',
+] as const;
+
+/**
+ * Cinco claves que recorren la ficha de arriba abajo. Las tres últimas pertenecen a los bloques
+ * finales de la entrevista (riesgo, edad/situación): si el agente aún no ha llegado ahí, no puede
+ * tenerlas en un resumen intermedio. Que estén las cinco es la señal fuerte de "esto es el cierre".
+ */
+const CLAVES_ANCLA = [
+  'fecha_entrevista',
+  'ingresos_netos_mensual',
+  'objetivo_proposito',
+  'riesgo_perfil_derivado',
+  'situacion_laboral',
+] as const;
+
+/** Mínimo de claves de `CLAVES_FICHA` presentes para dar el mensaje por ficha de cierre. */
+const CLAVES_FICHA_MINIMO = 15;
+
+/**
+ * ¿El mensaje del agente ES la ficha de cierre (contrato `clave: valor [estado]` de
+ * `instrucciones-sistema.md`) y no una pregunta ni una recapitulación a mitad de entrevista?
+ *
+ * Antes bastaba con encontrar `fecha_entrevista:` e `ingresos_netos_mensual:` en cualquier parte
+ * del texto — demasiado laxo: un resumen intermedio del agente que mencionara esas dos claves
+ * disparaba el cierre con una ficha incompleta, y el turno acababa en error. Ahora se exige que
+ * aparezcan como línea `clave:` las cinco claves ancla y, además, al menos `CLAVES_FICHA_MINIMO`
+ * de las claves fijas del contrato (una ficha real las trae todas).
+ */
 export function contieneFicha(textoMensaje: string): boolean {
-  return (
-    /\bfecha_entrevista\s*:/i.test(textoMensaje) &&
-    /\bingresos_netos_mensual\s*:/i.test(textoMensaje)
-  );
+  const claves = new Set<string>();
+  for (const lineaCruda of textoMensaje.split('\n')) {
+    const m = lineaCruda.trim().match(/^([a-z0-9_]+)\s*:/i);
+    if (m) claves.add(m[1].toLowerCase());
+  }
+  const anclasPresentes = CLAVES_ANCLA.every((clave) => claves.has(clave));
+  const cuentaFicha = CLAVES_FICHA.filter((clave) => claves.has(clave)).length;
+  return anclasPresentes && cuentaFicha >= CLAVES_FICHA_MINIMO;
 }

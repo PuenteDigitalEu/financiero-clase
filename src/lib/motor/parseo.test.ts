@@ -46,6 +46,35 @@ describe('contieneFicha', () => {
   it('no confunde una pregunta normal de la entrevista con la ficha', () => {
     expect(contieneFicha('¿Cuánto ingresas al mes, en neto?')).toBe(false);
   });
+
+  it('NO dispara con un resumen intermedio que menciona dos claves sueltas (regresión)', () => {
+    const resumenParcial = [
+      'Voy anotando: fecha_entrevista: 2026-09-02',
+      'ingresos_netos_mensual: 2000 — nómina fija',
+      'Seguimos con los gastos, ¿cuánto te dejas al mes?',
+    ].join('\n');
+    expect(contieneFicha(resumenParcial)).toBe(false);
+  });
+
+  it('NO dispara con una recapitulación de los primeros bloques, sin los finales', () => {
+    const hastaObjetivo = [
+      'nombre: Prueba [confirmado]',
+      'email: prueba@example.com [confirmado]',
+      'fecha_entrevista: 2026-09-02',
+      'ingresos_netos_mensual: 2800 [confirmado]',
+      'ingresos_estabilidad: estable [confirmado]',
+      'gastos_fijos_mensual: 1500 [confirmado]',
+      'deudas_numero: 0',
+      'patrimonio_liquido: 8000 [confirmado]',
+      'patrimonio_invertido: 17000 [confirmado]',
+      'aportacion_mensual_actual: 300 [confirmado]',
+      'colchon_meses: 5 [confirmado]',
+      'objetivo_proposito: complementar la jubilación [confirmado]',
+      '¿Cómo llevarías una caída fuerte del mercado?',
+    ].join('\n');
+    // Le faltan las claves ancla de los bloques finales (riesgo/edad/situación).
+    expect(contieneFicha(hastaObjetivo)).toBe(false);
+  });
 });
 
 describe('parsearFicha', () => {
