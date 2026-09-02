@@ -106,14 +106,19 @@ a mitad camino, que el diagnóstico automático que recibe es coherente y útil 
 previo del asesor, y que a ti (el asesor) el par ficha+diagnóstico te ahorra de verdad la primera
 conversación manual.
 
-**Qué queda para cerrar la validación** (a 2026-09-01):
+**Qué queda para cerrar la validación** (a 2026-09-02):
 
-- [ ] **Recorrido completo del asesor en producción**, de principio a fin: aceptar el
-      consentimiento → responder la entrevista entera → ver el diagnóstico y el plan en el chat →
-      recibir el email de aviso → comprobar que la conversación queda `completada` en Supabase con
-      su ficha, informe y plan.
+- [x] **Recorrido completo del asesor en producción** (2026-09-02): entrevista entera → diagnóstico
+      y plan en el chat → aviso al asesor. Verificado en Supabase: la conversación `3b0fe4da…` quedó
+      `completada` con cliente enlazado, ficha (edad 59, perfil moderado), deudas, informe (modo
+      `completo`, flujo libre 200, aportación propuesta 140) y plan (markdown 2.861 car.). La
+      notificación al asesor se registró como `enviado` a `movisuncr@gmail.com` y Resend la
+      confirmó. Es la primera conversación que llega a `completada` desde el 2026-08-31; confirma
+      los arreglos de la edad decimal y de `contieneFicha`.
 - [ ] **Enviar el enlace genérico a las primeras 5-10 personas** y dejar pasar 1-2 semanas antes de
-      revisar nada — con menos datos los porcentajes no dicen nada.
+      revisar nada — con menos datos los porcentajes no dicen nada. URL:
+      `financiero-clase.vercel.app` (la `financiera-clase.vercel.app` de "Dominios" en Vercel da 404
+      — reapuntar o quitar).
 - [ ] **Revisar con los datos reales:** tasa de abandono y en qué punto se caen, coherencia y
       utilidad de los diagnósticos automáticos, y si el par ficha+diagnóstico ahorra la primera
       llamada. Para lo del abandono hay 3 consultas SQL preparadas (embudo desde el consentimiento,
@@ -122,8 +127,8 @@ conversación manual.
       de turnos y "abandonada" se toma como "no completada y fría >2 h".
 
 Hecho ya de la preparación: variables de entorno de producción verificadas (2026-08-31), revisión
-visual de M-01 (2026-08-30), y el fix del cierre cuando la edad venía con decimales (2026-09-01,
-changelog).
+visual de M-01 (2026-08-30), fix del cierre con edad decimal (2026-09-01) y `contieneFicha` más
+estricta para no disparar el cierre a mitad de entrevista (2026-09-02) — todo en changelog.
 
 ---
 
