@@ -95,8 +95,7 @@ scripts/          → scripts de verificación (cobertura, persistencia, revisi�
                     src/lib/alertas/revision-core.ts, compartida con la Edge Function)
 supabase/functions/ → Edge Functions (Deno). `revision-mercado/` = revisión diaria de M-09,
                       disparada por pg_cron (ver docs/architecture.md → "Estrategia de despliegue")
-.github/workflows/ → `cobertura.yml` (CI de cobertura). `revision-diaria.yml` (cron de M-09) queda
-                     obsoleto en cuanto pg_cron esté verificado
+.github/workflows/ → `cobertura.yml` (CI de cobertura)
 changelog/        → registro de cambios (ver protocolo más abajo)
 mejoras/          → ideas futuras no implementadas
 ```
@@ -210,7 +209,8 @@ Function es esa URL sin nada más que mantener.
   secreto propio, `REVISION_SECRET`, en `Authorization: Bearer …`, guardado en el Vault de Supabase
   para no dejarlo en claro en `cron.job`.
 - Pasos de despliegue y el SQL del cron: `supabase/functions/revision-mercado/README.md`.
-- Sustituye a `.github/workflows/revision-diaria.yml`, que se retira cuando el cron esté verificado.
+- Reemplazó al `.github/workflows/revision-diaria.yml` de GitHub Actions, retirado el 2026-09-02
+  tras verificar el `pg_cron` (200 en la llamada de prueba).
 
 ---
 

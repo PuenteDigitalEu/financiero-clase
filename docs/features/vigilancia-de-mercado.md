@@ -77,12 +77,9 @@ correo **al propio cliente** queda fuera de esta feature de momento (ver "Fuera 
   mira: hoy una alerta llega a todo cliente del perfil, tenga o no esa clase de activo en cartera.
 - **Panel del asesor para las alertas.** Se consultan por SQL / lectura directa; la UI es `S-01` y
   su ampliación, no esta feature.
-- **Despliegue de la Edge Function y alta del `pg_cron`.** El código está escrito y verificado
-  (lógica + refactor + ejecución real por `pnpm revision`), pero desplegar la función
-  (`supabase functions deploy`) y programar el cron son pasos operativos que hace el usuario — ver
-  `supabase/functions/revision-mercado/README.md`. Retirar después `revision-diaria.yml` y sus
-  secrets de GitHub.
-- **Corridas del cron en producción.** La primera ejecución real de la lógica contra el Supabase
-  de producción se hizo el 2026-08-31 (23 cierres del S&P 500 insertados, 0 eventos) y se repitió
-  tras el refactor el 2026-09-01. Las corridas diarias por `pg_cron` son operación normal, no
-  parte de esta feature.
+- **Corridas del cron en producción.** La Edge Function se desplegó y el `pg_cron` se dio de alta
+  el 2026-09-02 (`supabase functions deploy` + el SQL del README): la llamada de prueba del cron
+  devolvió 200 con el resumen. El `.github/workflows/revision-diaria.yml` de GitHub Actions se
+  retiró ese mismo día. Las corridas diarias son operación normal, no parte de esta feature.
+- **Borrar los secrets `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` del repo de GitHub** — ya no
+  los usa nada; paso manual del usuario en la configuración del repo.

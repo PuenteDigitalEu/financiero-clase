@@ -181,15 +181,16 @@ cuando uno cruza el umbral de un perfil, registra un evento y una alerta por cli
       prueba con caída sintética −7,49% → 3 eventos + 2 alertas por perfil, idempotente en la 2ª
       pasada. Verificación estructural aparte con `scripts/verificar-revision.mjs` (PGlite).
 - [x] Programación: **Supabase Edge Function + `pg_cron`** (`supabase/functions/revision-mercado/`),
-      cron diario L-V tras el cierre de EE. UU. `pg_cron` llama a la URL de la función con `pg_net`,
+      cron diario L-V (`15 22 * * 1-5` UTC). `pg_cron` llama a la URL de la función con `pg_net`,
       autorizada por un secreto propio (`REVISION_SECRET`) en la cabecera `Authorization`, no por el
       login de un usuario. Reemplaza la decisión anterior de GitHub Actions. Changelog 2026-09-01.
-- [ ] **Desplegar la Edge Function y dar de alta el `pg_cron`** — pasos operativos del usuario
-      (`supabase functions deploy` + el SQL del cron), en
-      `supabase/functions/revision-mercado/README.md`. Requiere instalar la CLI de Supabase (no
-      estaba en el repo).
-- [ ] Una vez el `pg_cron` esté verificado: **retirar `.github/workflows/revision-diaria.yml`** y
-      sus secrets `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` del repo de GitHub.
+- [x] **Desplegada y con el `pg_cron` de alta** (2026-09-02): `supabase functions deploy
+      revision-mercado --no-verify-jwt` + el SQL del README (extensiones, secreto en Vault,
+      `cron.schedule`). Verificado: `curl` con el secreto → 200 con el resumen; la llamada de prueba
+      del cron (`net.http_post`) → 200. Job `revision-mercado-diaria` activo. Changelog 2026-09-02.
+- [x] Retirado `.github/workflows/revision-diaria.yml` (2026-09-02).
+- [ ] **Borrar los secrets `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` del repo de GitHub** — ya no
+      los usa nada; paso manual del usuario.
 - [ ] **Correo al cliente:** apagado a propósito (`REVISION_ENVIAR_CORREO_CLIENTE=false`). Para
       activarlo hace falta un dominio verificado en Resend. Pendiente de decidir cuándo.
 
