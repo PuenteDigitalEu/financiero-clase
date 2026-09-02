@@ -19,7 +19,9 @@
  *   - RESEND_API_KEY / REVISION_EMAIL_FROM   solo si el correo al cliente está activo.
  */
 
-import { createClient } from '@supabase/supabase-js';
+// Especificador npm directo (Deno): así el bundler no depende del import map para el import de
+// valor. El import map de `deno.json` sigue estando para el `import type` de revision-core.ts.
+import { createClient } from 'npm:@supabase/supabase-js@2.112.4';
 
 import { ejecutarRevision } from '../../../src/lib/alertas/revision-core.ts';
 
